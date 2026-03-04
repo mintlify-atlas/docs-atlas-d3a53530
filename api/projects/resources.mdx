@@ -907,6 +907,163 @@ The `ProjectResourceItem` model represents the assignment of a resource to a pro
 
 ---
 
+## Get Complete Project Information
+
+Retrieve comprehensive information about a project including all work orders, custody chains, sheet details, and metadata.
+
+```http
+GET /api/projects/all-info/{project_id}/
+```
+
+<ParamField path="project_id" type="integer" required>
+  ID of the project to retrieve complete information for
+</ParamField>
+
+### Response
+
+Returns a detailed object containing:
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Complete project information object
+  
+  <Expandable title="project">
+    <ResponseField name="id" type="integer">
+      Project ID
+    </ResponseField>
+    <ResponseField name="partner_id" type="integer">
+      Partner/client ID
+    </ResponseField>
+    <ResponseField name="partner_name" type="string">
+      Partner/client name
+    </ResponseField>
+    <ResponseField name="location" type="string">
+      Project location
+    </ResponseField>
+    <ResponseField name="cardinal_point" type="string">
+      Cardinal direction
+    </ResponseField>
+    <ResponseField name="contact_name" type="string">
+      Contact person name
+    </ResponseField>
+    <ResponseField name="contact_phone" type="string">
+      Contact phone number
+    </ResponseField>
+    <ResponseField name="start_date" type="string">
+      Project start date
+    </ResponseField>
+    <ResponseField name="end_date" type="string">
+      Project end date (if set)
+    </ResponseField>
+    <ResponseField name="is_closed" type="boolean">
+      Whether project is closed
+    </ResponseField>
+  </Expandable>
+  
+  <Expandable title="work_orders">
+    <ResponseField name="work_orders" type="array">
+      Array of work orders (SheetProject) with nested details
+    </ResponseField>
+    <ResponseField name="work_orders_count" type="integer">
+      Total number of work orders
+    </ResponseField>
+    
+    Each work order includes:
+    - Basic information (series_code, issue_date, period_start, period_end, status)
+    - Financial data (subtotal, tax_amount, total)
+    - Service details (service_type, total_gallons, total_barrels, total_cubic_meters)
+    - Sheet details array with resource items and costs
+    - Custody chains array with complete chain information
+    - Maintenance sheets count
+    - Metadata (created_at, updated_at, user info)
+  </Expandable>
+  
+  <ResponseField name="total_custody_chains" type="integer">
+    Total custody chains across all work orders
+  </ResponseField>
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "project": {
+      "id": 5,
+      "partner_id": 1,
+      "partner_name": "PETROECUADOR",
+      "location": "Camp Site A",
+      "cardinal_point": "NORTE",
+      "contact_name": "John Doe",
+      "contact_phone": "+593987654321",
+      "start_date": "2025-03-01",
+      "end_date": null,
+      "is_closed": false
+    },
+    "work_orders": [
+      {
+        "id": 1,
+        "series_code": "PSL-PS-2025-0001",
+        "issue_date": "2025-03-01",
+        "period_start": "2025-03-01",
+        "period_end": "2025-03-15",
+        "status": "LIQUIDATED",
+        "subtotal": "1500.00",
+        "tax_amount": "225.00",
+        "total": "1725.00",
+        "details": [
+          {
+            "id": 1,
+            "equipment": "BATERIA SANITARIA HOMBRE",
+            "quantity": 15,
+            "unit_price": "50.00",
+            "total_line": "750.00",
+            "resource_item_code": "BS-001"
+          }
+        ],
+        "details_count": 1,
+        "custody_chains": [
+          {
+            "id": 42,
+            "consecutive": 1,
+            "activity_date": "2025-03-01",
+            "location": "Camp Site A",
+            "status": "COMPLETED",
+            "total_gallons": "500.00",
+            "technical": {
+              "id": 3,
+              "first_name": "Juan",
+              "last_name": "Pérez"
+            },
+            "vehicle": {
+              "id": 7,
+              "no_plate": "ABC-123",
+              "brand": "Ford",
+              "model": "F-150"
+            },
+            "details_count": 3
+          }
+        ],
+        "custody_chains_count": 1,
+        "maintenance_sheets_count": 2
+      }
+    ],
+    "work_orders_count": 1,
+    "total_custody_chains": 1
+  }
+}
+```
+
+<Note>
+This endpoint is useful for generating comprehensive project reports, dashboards, and export functionality. It includes complete nested data structures with metadata for audit purposes.
+</Note>
+
+---
+
 ## Best Practices
 
 <Card title="Use Batch Creation" icon="layer-group">
