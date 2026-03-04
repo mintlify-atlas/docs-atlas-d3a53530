@@ -1,0 +1,125 @@
+{
+  "projectType": "saas",
+  "projectName": "Mantis",
+  "projectDescription": "Project and equipment management system for tracking resources, work orders, custody chains, and maintenance operations.",
+  "theme": "almond",
+  "primaryColor": "#2563eb",
+  "lightColor": "#60a5fa",
+  "darkColor": "#1e40af",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/projects",
+              "features/equipment",
+              "features/work-orders",
+              "features/custody-chains",
+              "features/maintenance",
+              "features/reports"
+            ]
+          },
+          {
+            "group": "User Guides",
+            "pages": [
+              "guides/project-management",
+              "guides/resource-allocation",
+              "guides/document-management",
+              "guides/calendar-scheduling"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Projects",
+            "pages": [
+              "api/projects/resources",
+              "api/projects/close-project"
+            ]
+          },
+          {
+            "group": "Equipment",
+            "pages": [
+              "api/equipment/vehicles",
+              "api/equipment/resources"
+            ]
+          },
+          {
+            "group": "Work Orders",
+            "pages": [
+              "api/workorders/sheets",
+              "api/workorders/custody-chains",
+              "api/workorders/maintenance"
+            ]
+          },
+          {
+            "group": "Technical Staff",
+            "pages": [
+              "api/technicals/management",
+              "api/technicals/availability"
+            ]
+          },
+          {
+            "group": "Documents",
+            "pages": [
+              "api/documents/upload",
+              "api/documents/merge"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Project and partner management with location tracking",
+    "Equipment and vehicle resource allocation and tracking",
+    "Work order management with custody chains",
+    "Maintenance scheduling and sheets",
+    "Technical staff management with certifications and vaccinations",
+    "Document management with PDF generation and merging",
+    "Calendar-based resource scheduling",
+    "Shipping guide generation"
+  ],
+  "publicApiSurface": [
+    "POST /api/projects/resources/add/ - Add resource to project",
+    "DELETE /api/projects/resources/delete/<id>/ - Remove resource from project",
+    "GET /api/projects/resources/available/ - List available resources",
+    "POST /api/projects/<id>/close/ - Close a project",
+    "GET /api/projects/<id>/resources/ - Get project resources",
+    "POST /api/vehicles/cert_vehicle/ - Manage vehicle certifications",
+    "POST /api/vehicles/pass_vehicle/ - Manage vehicle passes",
+    "GET /api/vehicles/avaliables/ - List available vehicles",
+    "POST /api/technicals/create_update_pass_technical/ - Manage technical passes",
+    "POST /api/technicals/create_update_vaccine/ - Manage vaccination records",
+    "GET /api/technicals/avaliables/ - List available technicians",
+    "POST /api/workorders/sheets/create/ - Create work sheet",
+    "POST /api/workorders/custody_chain/create/ - Create custody chain",
+    "GET /api/workorders/sheets/project/<id>/ - Get project sheets",
+    "POST /api/load_files/ - Upload files",
+    "POST /api/load_files/project/<id>/merge/ - Merge project documents",
+    "POST /api/shipping/guides/ - Create shipping guide",
+    "POST /api/maintenance/sheets/ - Create maintenance sheet",
+    "POST /api/calendar/events/ - Create calendar event"
+  ]
+}
