@@ -1,80 +1,334 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start Guide
+description: Get Mantis up and running quickly with this streamlined setup guide covering prerequisites, installation, and creating your first project.
 ---
 
-## Get started in three steps
+# Quick Start Guide
 
-Get your documentation site running locally and make your first customization.
+Get Mantis running on your local machine in minutes. This guide covers the essential steps to set up a development environment.
 
-### Step 1: Set up your local environment
+## Prerequisites
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+Before you begin, ensure you have the following installed:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Python 3.x" icon="python">
+    Python 3.8 or higher required for Django 4.2
+  </Card>
+  <Card title="PostgreSQL" icon="database">
+    PostgreSQL 12 or higher for database storage
+  </Card>
+  <Card title="Node.js" icon="node-js">
+    Node.js 20.19.0+ or 22.12.0+ for frontend development
+  </Card>
+  <Card title="Git" icon="git">
+    For cloning the repository
+  </Card>
 </CardGroup>
 
+## Quick Setup
+
+<Steps>
+  <Step title="Clone the Repository">
+    Clone the Mantis source code to your local machine:
+
+    ```bash
+    git clone <repository-url>
+    cd mantis
+    ```
+  </Step>
+
+  <Step title="Configure Database">
+    Create a PostgreSQL database for Mantis:
+
+    ```bash
+    # Access PostgreSQL
+    psql -U postgres
+
+    # Create database
+    CREATE DATABASE mantis;
+    CREATE USER mantis_user WITH PASSWORD 'your_password';
+    GRANT ALL PRIVILEGES ON DATABASE mantis TO mantis_user;
+    ```
+
+    Configure your database connection in `app/src/common/secrets.py`:
+
+    ```python
+    DATABASES = {
+        'DEVELOPMENT': {
+            "ENGINE": "django.db.backends.postgresql",
+            'NAME': 'mantis',
+            'USER': 'mantis_user',
+            'PASSWORD': 'your_password',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
+
+    DEFAULT_DB = {
+        'default': DATABASES['DEVELOPMENT']
+    }
+    ```
+  </Step>
+
+  <Step title="Set Up Backend">
+    Navigate to the Django project directory and run migrations:
+
+    ```bash
+    cd app/src
+
+    # Create migrations for core apps
+    python manage.py makemigrations accounts
+    python manage.py makemigrations equipment projects
+
+    # Apply migrations
+    python manage.py migrate
+
+    # Seed initial data
+    python manage.py sowseed
+
+    # Populate audit history
+    python manage.py populate_history --auto
+    ```
+
+    <Note>
+      The `sowseed` command populates the database with initial data required for system operation.
+    </Note>
+  </Step>
+
+  <Step title="Create Superuser">
+    Create an administrative user to access the Django admin:
+
+    ```bash
+    python manage.py createsuperuser
+    ```
+
+    Follow the prompts to enter:
+    - Email address (used as username)
+    - Password
+    - Additional user information
+  </Step>
+
+  <Step title="Set Up Frontend">
+    Install and build the Vue.js frontend:
+
+    ```bash
+    cd app/client/mantis
+
+    # Install dependencies
+    npm install
+
+    # Run development server
+    npm run dev
+    ```
+
+    The frontend will be available at `http://localhost:5173`
+
+    <Note>
+      For production builds, use `npm run build` which will compile and copy assets to the Django static directories.
+    </Note>
+  </Step>
+
+  <Step title="Start Django Development Server">
+    Return to the Django directory and start the backend server:
+
+    ```bash
+    cd ../../src
+    python manage.py runserver
+    ```
+
+    The Django API and admin interface will be available at `http://localhost:8000`
+  </Step>
+</Steps>
+
+## Creating Your First Project
+
+Once Mantis is running, you can create your first project through either the Django admin interface or the API.
+
+### Via Django Admin
+
+<Steps>
+  <Step title="Access Admin Interface">
+    Navigate to `http://localhost:8000/admin` and log in with your superuser credentials.
+  </Step>
+
+  <Step title="Create a Partner">
+    Before creating a project, you need a partner (client):
+
+    1. Go to **Projects** → **Partners**
+    2. Click **Add Partner**
+    3. Fill in the partner details (name, contact info, etc.)
+    4. Click **Save**
+  </Step>
+
+  <Step title="Create a Project">
+    Now create your first project:
+
+    1. Go to **Projects** → **Projects**
+    2. Click **Add Project**
+    3. Select the partner you just created
+    4. Fill in project details:
+       - Location (campamento)
+       - Cardinal point
+       - Contact name and phone
+       - Start date
+    5. Click **Save**
+  </Step>
+
+  <Step title="Allocate Resources">
+    Add resources to your project:
+
+    1. From the project detail page, scroll to **Project Resource Items**
+    2. Click **Add another Project Resource Item**
+    3. Select a resource item (equipment or service)
+    4. Configure:
+       - Resource type (EQUIPO or SERVICIO)
+       - Cost
+       - Maintenance frequency
+       - Operation dates
+    5. Click **Save**
+  </Step>
+</Steps>
+
+### Via API
+
+You can also create projects programmatically using the REST API:
+
+```bash
+# First, obtain an authentication token (if using token auth)
+curl -X POST http://localhost:8000/api/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "your_password"}'
+
+# Create a project
+curl -X POST http://localhost:8000/api/projects/projects/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Token <your_token>" \
+  -d '{
+    "partner_id": 1,
+    "location": "Campo Norte",
+    "cardinal_point": "NORTE",
+    "contact_name": "Juan Pérez",
+    "contact_phone": "0999123456",
+    "start_date": "2026-03-04"
+  }'
+```
+
+<Warning>
+  Make sure to configure CSRF trusted origins in `settings.py` if you're accessing the API from a different domain.
+</Warning>
+
+## Verify Your Installation
+
+Confirm everything is working correctly:
+
+<AccordionGroup>
+  <Accordion title="Check Django Admin">
+    - Navigate to `http://localhost:8000/admin`
+    - Log in successfully
+    - View the Grappelli-enhanced interface
+    - Access Projects, Equipment, and Accounts sections
+  </Accordion>
+
+  <Accordion title="Check API Endpoints">
+    Test API availability:
+
+    ```bash
+    curl http://localhost:8000/api/
+    ```
+
+    You should receive a JSON response with available endpoints.
+  </Accordion>
+
+  <Accordion title="Check Frontend">
+    - Navigate to `http://localhost:5173`
+    - Verify the Vue.js application loads
+    - Check that assets load correctly
+    - Test navigation between pages
+  </Accordion>
+
+  <Accordion title="Check Database">
+    Verify database connectivity:
+
+    ```bash
+    python manage.py dbshell
+    ```
+
+    This should open a PostgreSQL prompt. You can run:
+
+    ```sql
+    \dt  -- List all tables
+    SELECT * FROM accounts_customusermodel;  -- Check users
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Database Connection Error">
+    If you see "could not connect to server":
+
+    1. Verify PostgreSQL is running: `sudo systemctl status postgresql`
+    2. Check database credentials in `common/secrets.py`
+    3. Ensure the database exists: `psql -U postgres -l`
+    4. Verify host and port settings
+  </Accordion>
+
+  <Accordion title="Migration Errors">
+    If migrations fail:
+
+    1. Reset migrations (development only):
+       ```bash
+       python manage.py migrate --fake accounts zero
+       python manage.py migrate accounts
+       ```
+    2. Check for circular dependencies in models
+    3. Ensure all apps are listed in `INSTALLED_APPS`
+  </Accordion>
+
+  <Accordion title="Frontend Build Errors">
+    If `npm run build` fails:
+
+    1. Clear node_modules: `rm -rf node_modules package-lock.json`
+    2. Reinstall: `npm install`
+    3. Check Node.js version: `node --version` (should be 20.19.0+)
+    4. Clear Vite cache: `rm -rf node_modules/.vite`
+  </Accordion>
+
+  <Accordion title="Static Files Not Loading">
+    If static files don't appear:
+
+    1. Collect static files:
+       ```bash
+       python manage.py collectstatic
+       ```
+    2. Check `STATIC_ROOT` and `STATIC_URL` in settings
+    3. Verify `STATICFILES_DIRS` configuration
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Now that Mantis is running, explore these topics:
+
+<CardGroup cols={2}>
+  <Card title="Installation Guide" icon="book" href="/installation">
+    Learn about production deployment and advanced configuration.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore the complete REST API documentation.
+  </Card>
+  <Card title="Project Features" icon="folder-open" href="/features/projects">
+    Learn about project management capabilities.
+  </Card>
+  <Card title="User Guides" icon="users" href="/guides/project-management">
+    Deep dive into project workflows and resource allocation.
+  </Card>
+</CardGroup>
+
+## Need Help?
+
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  For detailed installation instructions, including production deployment, environment configuration, and troubleshooting, see the [Installation Guide](/installation).
 </Note>

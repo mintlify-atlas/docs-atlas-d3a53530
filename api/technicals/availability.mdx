@@ -1,0 +1,382 @@
+---
+title: 'Technical Staff Availability'
+description: 'Retrieve available technical staff with passes and vaccination records'
+---
+
+# Technical Staff Availability
+
+Retrieve a comprehensive list of active technical staff members including their access passes and vaccination records. This endpoint is used for resource planning and compliance verification.
+
+## Get Available Technicals
+
+<CodeGroup>
+```bash GET /api/technicals/avaliables/
+curl -X GET https://api.mantis.com/api/technicals/avaliables/ \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.mantis.com/api/technicals/avaliables/"
+)
+data = response.json()
+```
+</CodeGroup>
+
+Retrieve all active technical staff members with their associated passes and vaccination records. The response includes complete profile information and compliance documentation.
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of technical staff objects
+  
+  <ResponseField name="id" type="integer">
+    Technical staff ID
+  </ResponseField>
+  
+  <ResponseField name="first_name" type="string">
+    First name
+  </ResponseField>
+  
+  <ResponseField name="last_name" type="string">
+    Last name
+  </ResponseField>
+  
+  <ResponseField name="email" type="string">
+    Email address
+  </ResponseField>
+  
+  <ResponseField name="work_area" type="string">
+    Work area code
+  </ResponseField>
+  
+  <ResponseField name="work_area_display" type="string">
+    Human-readable work area name
+  </ResponseField>
+  
+  <ResponseField name="dni" type="string">
+    National identification number
+  </ResponseField>
+  
+  <ResponseField name="nro_phone" type="string">
+    Phone number
+  </ResponseField>
+  
+  <ResponseField name="date_joined" type="string">
+    Date joined the company (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="birth_date" type="string">
+    Birth date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="license_issue_date" type="string">
+    Driver's license issue date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="license_expiry_date" type="string">
+    Driver's license expiration date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="defensive_driving_certificate_issue_date" type="string">
+    Defensive driving certificate issue date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="defensive_driving_certificate_expiry_date" type="string">
+    Defensive driving certificate expiration date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="mae_certificate_issue_date" type="string">
+    MAE (Ministry of Environment) certificate issue date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="mae_certificate_expiry_date" type="string">
+    MAE certificate expiration date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="medical_certificate_issue_date" type="string">
+    Medical certificate issue date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="medical_certificate_expiry_date" type="string">
+    Medical certificate expiration date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="is_iess_affiliated" type="boolean">
+    IESS (social security) affiliation status
+  </ResponseField>
+  
+  <ResponseField name="has_life_insurance_policy" type="boolean">
+    Life insurance policy status
+  </ResponseField>
+  
+  <ResponseField name="quest_ncst_code" type="string">
+    QUEST NCST training code
+  </ResponseField>
+  
+  <ResponseField name="quest_instructor" type="string">
+    QUEST training instructor name
+  </ResponseField>
+  
+  <ResponseField name="quest_start_date" type="string">
+    QUEST training start date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="quest_end_date" type="string">
+    QUEST training end date (ISO 8601)
+  </ResponseField>
+  
+  <ResponseField name="notes" type="string">
+    Additional notes
+  </ResponseField>
+  
+  <ResponseField name="is_active" type="boolean">
+    Active status flag
+  </ResponseField>
+  
+  <ResponseField name="is_deleted" type="boolean">
+    Soft delete flag
+  </ResponseField>
+  
+  <ResponseField name="passes" type="array">
+    Array of access passes for oil blocks/facilities
+    
+    <ResponseField name="id" type="integer">
+      Pass ID
+    </ResponseField>
+    
+    <ResponseField name="bloque" type="string">
+      Block/company identifier code
+    </ResponseField>
+    
+    <ResponseField name="bloque_display" type="string">
+      Human-readable block/company name
+    </ResponseField>
+    
+    <ResponseField name="fecha_caducidad" type="string">
+      Expiration date (ISO 8601)
+    </ResponseField>
+    
+    <ResponseField name="meta" type="object">
+      Metadata including notes, timestamps, and user tracking
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="vaccination_records" type="array">
+    Array of vaccination records
+    
+    <ResponseField name="id" type="integer">
+      Vaccination record ID
+    </ResponseField>
+    
+    <ResponseField name="vaccine_type" type="string">
+      Vaccine type code
+    </ResponseField>
+    
+    <ResponseField name="vaccine_type_display" type="string">
+      Human-readable vaccine name
+    </ResponseField>
+    
+    <ResponseField name="batch_number" type="string">
+      Vaccine batch/lot number
+    </ResponseField>
+    
+    <ResponseField name="application_date" type="string">
+      Date administered (ISO 8601)
+    </ResponseField>
+    
+    <ResponseField name="dose_number" type="integer">
+      Dose number in series
+    </ResponseField>
+    
+    <ResponseField name="next_dose_date" type="string">
+      Next dose date (ISO 8601)
+    </ResponseField>
+    
+    <ResponseField name="days_to_next_dose" type="integer">
+      Calculated days until next dose is due
+    </ResponseField>
+    
+    <ResponseField name="notes" type="string">
+      Additional notes
+    </ResponseField>
+    
+    <ResponseField name="meta" type="object">
+      Metadata including timestamps and user tracking
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="meta" type="object">
+    Technical staff metadata including audit trail
+  </ResponseField>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "data": [
+    {
+      "id": 123,
+      "first_name": "Juan",
+      "last_name": "Pérez",
+      "email": "juan.perez@example.com",
+      "work_area": "FIELD_OPS",
+      "work_area_display": "Field Operations",
+      "dni": "1234567890",
+      "nro_phone": "+593-99-123-4567",
+      "date_joined": "2020-01-15",
+      "birth_date": "1985-05-20",
+      "license_issue_date": "2018-03-10",
+      "license_expiry_date": "2028-03-10",
+      "defensive_driving_certificate_issue_date": "2023-06-01",
+      "defensive_driving_certificate_expiry_date": "2026-06-01",
+      "mae_certificate_issue_date": "2024-01-15",
+      "mae_certificate_expiry_date": "2027-01-15",
+      "medical_certificate_issue_date": "2025-02-01",
+      "medical_certificate_expiry_date": "2026-02-01",
+      "is_iess_affiliated": true,
+      "has_life_insurance_policy": true,
+      "quest_ncst_code": "QUEST-2024-001",
+      "quest_instructor": "Carlos Mendoza",
+      "quest_start_date": "2024-01-10",
+      "quest_end_date": "2024-01-25",
+      "notes": "Certified for high-altitude operations",
+      "is_active": true,
+      "is_deleted": false,
+      "passes": [
+        {
+          "id": 456,
+          "bloque": "petroecuador",
+          "bloque_display": "Tarjeta de Petroecuador",
+          "fecha_caducidad": "2026-12-31",
+          "meta": {
+            "notes": null,
+            "created_at": "2025-01-15T10:30:00Z",
+            "updated_at": "2025-02-20T14:15:00Z",
+            "is_active": true,
+            "is_deleted": false,
+            "id_user_created": 1,
+            "id_user_updated": 1
+          }
+        },
+        {
+          "id": 457,
+          "bloque": "shaya",
+          "bloque_display": "Shaya",
+          "fecha_caducidad": "2027-03-15",
+          "meta": {
+            "notes": null,
+            "created_at": "2025-03-01T09:00:00Z",
+            "updated_at": "2025-03-01T09:00:00Z",
+            "is_active": true,
+            "is_deleted": false,
+            "id_user_created": 1,
+            "id_user_updated": null
+          }
+        }
+      ],
+      "vaccination_records": [
+        {
+          "id": 789,
+          "vaccine_type": "YELLOW_FEVER",
+          "vaccine_type_display": "Fiebre Amarilla",
+          "batch_number": "YF2025-XYZ",
+          "application_date": "2025-03-15",
+          "dose_number": 1,
+          "next_dose_date": "2035-03-15",
+          "days_to_next_dose": 3650,
+          "notes": "Valid for 10 years",
+          "meta": {
+            "notes": "Valid for 10 years",
+            "created_at": "2025-03-15T11:00:00Z",
+            "updated_at": "2025-03-15T11:00:00Z",
+            "is_active": true,
+            "is_deleted": false,
+            "id_user_created": 2,
+            "id_user_updated": null
+          }
+        },
+        {
+          "id": 790,
+          "vaccine_type": "TETANUS",
+          "vaccine_type_display": "Tétanos",
+          "batch_number": "TET2024-ABC",
+          "application_date": "2024-06-10",
+          "dose_number": 2,
+          "next_dose_date": "2034-06-10",
+          "days_to_next_dose": 3378,
+          "notes": null,
+          "meta": {
+            "notes": null,
+            "created_at": "2024-06-10T14:30:00Z",
+            "updated_at": "2024-06-10T14:30:00Z",
+            "is_active": true,
+            "is_deleted": false,
+            "id_user_created": 2,
+            "id_user_updated": null
+          }
+        }
+      ],
+      "meta": {
+        "notes": "Certified for high-altitude operations",
+        "created_at": "2020-01-15T08:00:00Z",
+        "updated_at": "2025-03-01T10:00:00Z",
+        "is_active": true,
+        "is_deleted": false,
+        "id_user_created": 1,
+        "id_user_updated": 3
+      }
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Use Cases
+
+### Compliance Verification
+
+Check if technical staff have valid passes and up-to-date vaccinations before assigning them to field projects:
+
+```python
+response = requests.get("https://api.mantis.com/api/technicals/avaliables/")
+technicals = response.json()["data"]
+
+for tech in technicals:
+    # Check for active passes
+    active_passes = [p for p in tech["passes"] if p["meta"]["is_active"]]
+    
+    # Check vaccination compliance
+    required_vaccines = ["YELLOW_FEVER", "TETANUS", "HEPATITIS_A_B"]
+    tech_vaccines = [v["vaccine_type"] for v in tech["vaccination_records"]]
+    
+    is_compliant = all(v in tech_vaccines for v in required_vaccines)
+    
+    if is_compliant and len(active_passes) > 0:
+        print(f"{tech['first_name']} {tech['last_name']} is ready for deployment")
+```
+
+### Resource Planning
+
+Filter technical staff by work area and certification status:
+
+```python
+field_ops = [t for t in technicals if t["work_area"] == "FIELD_OPS"]
+certified = [t for t in field_ops if t["mae_certificate_expiry_date"] > "2026-01-01"]
+
+print(f"Available certified field operators: {len(certified)}")
+```
+
+## Data Prefetching
+
+This endpoint uses Django's `prefetch_related` to efficiently load related passes and vaccination records in a single database query, optimizing performance when retrieving large datasets.
+
+The query structure:
+```python
+Technical.get_all().prefetch_related(
+    Prefetch('passtechnical_set', queryset=PassTechnical.objects.filter(is_active=True)),
+    Prefetch('vaccination_records', queryset=VaccinationRecord.objects.filter(is_active=True))
+)
+```

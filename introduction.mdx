@@ -1,0 +1,176 @@
+---
+title: Introduction to Mantis
+description: Learn about Mantis, a comprehensive project management system built with Django and Vue.js for managing field operations, equipment, and technical resources.
+---
+
+# Introduction to Mantis
+
+Mantis is a comprehensive project management system designed for managing field operations, equipment tracking, and technical resource allocation. Built on a modern web stack, Mantis provides robust tools for managing projects from initiation through completion.
+
+## System Overview
+
+Mantis is built on a powerful technology stack that combines:
+
+- **Backend**: Django 4.2.14 with Django REST Framework for robust API services
+- **Frontend**: Vue.js 3.5 with Vite build system for a modern, reactive user interface
+- **Database**: PostgreSQL for reliable data persistence
+- **Additional Technologies**:
+  - Grappelli for enhanced Django admin interface
+  - Simple History for audit trail functionality
+  - Pinia for state management
+  - TailwindCSS with DaisyUI for styling
+
+## Key Features
+
+Mantis provides comprehensive functionality for field operations management:
+
+### Project Management
+- Create and manage projects with client (partner) associations
+- Track project locations with cardinal point references
+- Manage contact information and project timelines
+- Support for project lifecycle from start to closure
+
+### Resource Management
+- Allocate equipment and service resources to projects
+- Track resource costs (rental and maintenance)
+- Flexible maintenance scheduling with multiple frequency types:
+  - Day intervals (every N days)
+  - Specific weekdays
+  - Specific days of the month
+- Resource retirement tracking with documentation
+
+### Technical Personnel Management
+- Comprehensive technician profiles with work area assignments
+- Certificate and license tracking with expiration monitoring:
+  - Driver's licenses
+  - Defensive driving certificates
+  - MAE (environmental) certificates
+  - Medical certificates
+- Vaccination record management
+- Document attachment support (PDFs)
+
+### Field Operations
+- Custody chain management for tracking equipment and samples
+- Sheet project workflows for field documentation
+- Maintenance sheet tracking
+- Shipping guide generation
+- Final disposition certificate management
+
+### Administrative Features
+- Audit trail with django-simple-history
+- User session management
+- Email-based authentication system
+- Data export/import capabilities (JSON format)
+- Multi-environment support (Development, Test, Production)
+
+## Architecture Overview
+
+Mantis follows a modern client-server architecture:
+
+```
+┌─────────────────────────────────────────────┐
+│           Vue.js Frontend Client            │
+│  (Vite + Vue Router + Pinia + TailwindCSS)  │
+└─────────────────┬───────────────────────────┘
+                  │ HTTP/REST API
+                  ▼
+┌─────────────────────────────────────────────┐
+│         Django Backend API Server           │
+│    (Django REST Framework + Grappelli)      │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────┐
+│          PostgreSQL Database                │
+│     (Relational data with audit trails)     │
+└─────────────────────────────────────────────┘
+```
+
+### Backend Structure
+
+The Django backend is organized into modular applications:
+
+- **accounts**: User authentication and technical personnel management
+- **projects**: Project lifecycle, resource allocation, and field operations
+- **equipment**: Equipment catalog and resource item management
+- **api**: RESTful API endpoints for all modules
+- **reports**: PDF report generation
+- **workorders**: Work order management
+
+### Frontend Structure
+
+The Vue.js frontend provides:
+
+- Single Page Application (SPA) architecture
+- Component-based UI development
+- Centralized state management with Pinia
+- Responsive design with TailwindCSS
+- Hot module replacement for rapid development
+
+### Data Model Highlights
+
+**Core Entities**:
+
+- `CustomUserModel`: Email-based authentication with role assignments
+- `Project`: Client projects with location and timeline tracking
+- `ProjectResourceItem`: Equipment/service allocation to projects
+- `Technical`: Field technician profiles with certification tracking
+- `CustodyChain`: Equipment and sample tracking workflows
+- `SheetProject`: Field work documentation
+
+## User Roles
+
+Mantis supports two primary user roles defined in `accounts/models/CustomUserModel.py:11`:
+
+### ADMINISTRATIVO (Administrative)
+
+Administrative users have full system access including:
+
+- Project creation and management
+- Resource allocation and tracking
+- Technical personnel administration
+- System configuration
+- Report generation
+- Data export/import operations
+
+**Typical Use Cases**:
+- Office managers creating new projects
+- Administrators assigning resources to projects
+- HR personnel managing technician records
+- Supervisors reviewing custody chains and field documentation
+
+### TECNICO (Technical)
+
+Technical users have field-focused access including:
+
+- View assigned projects
+- Update field work sheets
+- Manage custody chains
+- Record maintenance activities
+- Upload field documentation
+- View their personal certificates and schedules
+
+**Typical Use Cases**:
+- Field technicians completing work sheets
+- Technicians recording equipment maintenance
+- Field personnel documenting custody chain transfers
+- Mobile workers accessing project details on-site
+
+## Localization
+
+Mantis is configured for Spanish (Ecuador) locale:
+
+- Language: `es-ec`
+- Timezone: `America/Guayaquil`
+- Date and time formats follow Ecuadorian standards
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get Mantis up and running in minutes with our quick start guide.
+  </Card>
+  <Card title="Installation" icon="download" href="/installation">
+    Detailed installation instructions for production deployment.
+  </Card>
+</CardGroup>

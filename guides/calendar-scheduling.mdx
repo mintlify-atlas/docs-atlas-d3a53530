@@ -1,0 +1,835 @@
+---
+title: 'Calendar Scheduling'
+description: 'Schedule maintenance events and track resource availability using the calendar system'
+icon: 'calendar-day'
+---
+
+# Calendar Scheduling Guide
+
+Learn how to use the Mantis calendar system to schedule maintenance events, track resource availability, and manage recurring service activities.
+
+## Overview
+
+The Mantis calendar provides:
+- **Automatic maintenance scheduling** based on resource frequency configurations
+- **Manual event creation** for ad-hoc tasks and inspections
+- **Visual month view** with color-coded events
+- **Drag-and-drop rescheduling** for confirmed events
+- **Cost projections** based on scheduled maintenance
+
+<Info>
+The calendar distinguishes between **planned maintenance** (auto-generated from resource configs) and **confirmed events** (manually created calendar entries).
+</Info>
+
+---
+
+## Understanding the Calendar View
+
+### Calendar Header
+
+The calendar header includes:
+
+**Month Navigation:**
+- ◀ **Previous Month** button
+- **Current Month & Year** display (e.g., "marzo 2024")
+- **Mes Actual** button (returns to current month if navigated away)
+- ▶ **Next Month** button
+
+**Summary Cards:**
+
+<CardGroup cols={4}>
+  <Card title="Planificados">
+    Count of auto-generated maintenance occurrences for the month
+  </Card>
+  <Card title="Eventos">
+    Count of manually created/confirmed calendar events
+  </Card>
+  <Card title="Recursos">
+    Number of resources with maintenance schedules
+  </Card>
+  <Card title="Costo Total">
+    Projected maintenance costs for the month (GTQ)
+  </Card>
+</CardGroup>
+
+**Legend:**
+- 🔵 **Blue dot**: Interval-based maintenance (every N days)
+- 🟣 **Purple dot**: Week-based maintenance (specific weekdays)
+- 🟠 **Orange dot**: Month-based maintenance (specific dates)
+- 🟢 **Green box**: Confirmed calendar event
+
+---
+
+## Calendar Month View
+
+The month view displays a grid of days with:
+
+### Day Cell Structure
+
+```
+┌─────────────────┐
+│ 15       [2][1] │  ← Day number, badge counts
+│ 🟢 Inspección   │  ← Confirmed events (first 2)
+│ 🔵 TQ-001       │  ← Planned maintenance (first 2)
+│ 🔵 TQ-002       │
+│ +3 más          │  ← Overflow indicator
+└─────────────────┘
+```
+
+**Color Coding:**
+- 🟢 **Lime background**: Days with scheduled content
+- 🟡 **Yellow ring**: Today's date
+- 🔵 **Blue highlight**: Drag-and-drop target
+
+**Badges:**
+- Green badge: Number of confirmed events
+- Primary badge: Number of planned maintenance items
+
+<Tip>
+Click any day with content (lime background) to see full details in a modal.
+</Tip>
+
+---
+
+## Automatic Maintenance Scheduling
+
+Mantis automatically generates maintenance schedules based on resource frequency configurations.
+
+### How Auto-Scheduling Works
+
+<Steps>
+  <Step title="Resource Added to Project">
+    When you add a resource with maintenance enabled, the system stores:
+    - `frequency_type`: DAY, WEEK, or MONTH
+    - `interval_days`: For DAY type
+    - `weekdays`: For WEEK type (array of 0-6)
+    - `monthdays`: For MONTH type (array of 1-31)
+    - `maintenance_cost`: Cost per occurrence
+    - `operation_start_date`: When scheduling begins
+  </Step>
+
+  <Step title="Calendar Loads Month">
+    When you view a month in the calendar, the system:
+    - Retrieves all project resources with maintenance
+    - Calls `generateMaintenanceSchedule()` function
+    - Calculates occurrences for the visible month
+  </Step>
+
+  <Step title="Schedule Generation">
+    For each resource, the system:
+    
+    **DAY Type:**
+    ```
+    start_date = operation_start_date
+    while date <= month_end:
+      if date >= month_start:
+        schedule_maintenance(date)
+      date += interval_days
+    ```
+
+    **WEEK Type:**
+    ```
+    for each day in month:
+      if day.weekday in configured_weekdays:
+        schedule_maintenance(day)
+    ```
+
+    **MONTH Type:**
+    ```
+    for each configured_day_number:
+      if day_number <= days_in_month:
+        schedule_maintenance(year, month, day_number)
+    ```
+  </Step>
+
+  <Step title="Display in Calendar">
+    Scheduled items appear as colored dots with resource codes.
+    
+    Color indicates frequency type for quick visual identification.
+  </Step>
+</Steps>
+
+### Maintenance Schedule Examples
+
+**Example 1: Daily Pump Check (DAY type)**
+- Resource: Pump PU-001
+- Frequency: Every 3 days
+- Start: March 1
+- Schedule: March 1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31
+
+**Example 2: Weekly Tank Inspection (WEEK type)**
+- Resource: Tank TQ-005
+- Frequency: Monday and Friday
+- March Schedule: All Mondays (4, 11, 18, 25) and Fridays (1, 8, 15, 22, 29)
+
+**Example 3: Monthly Calibration (MONTH type)**
+- Resource: Sensor SN-012
+- Frequency: 1st and 15th of each month
+- March Schedule: March 1, March 15
+- April Schedule: April 1, April 15
+
+<Note>
+Auto-scheduled maintenance appears in **read-only** mode. To track actual completion, create a corresponding calendar event.
+</Note>
+
+---
+
+## Creating Calendar Events
+
+Calendar events are confirmed activities tracked separately from automatic schedules.
+
+### Creating a New Event
+
+<Steps>
+  <Step title="Select Date">
+    **Option A:** Click the **[+]** button that appears on hover over any day cell
+    
+    **Option B:** Click a day cell to open the detail modal, then click **Nuevo Evento**
+  </Step>
+
+  <Step title="Fill Event Form">
+    The event form includes:
+
+    **Basic Information:**
+    - **Título** (required): Event name (e.g., "Mantenimiento Bomba PU-001")
+    - **Tipo de Evento**: Select from dropdown
+      - Mantenimiento (Maintenance)
+      - Instalación (Installation)
+      - Retiro (Removal)
+      - Inspección (Inspection)
+      - Otro (Other)
+    
+    **Priority & Status:**
+    - **Prioridad**: Baja, Media, Alta, Urgente
+    - **Estado**: Programado, En Progreso, Completado, Cancelado (only visible when editing)
+    - **Color**: Visual identifier in calendar (color picker)
+
+    **Schedule:**
+    - **Fecha Inicio** (required): Event start date (pre-filled from clicked day)
+    - **Fecha Fin**: Optional end date for multi-day events
+    - **Hora Inicio**: Start time (e.g., 08:00)
+    - **Hora Fin**: End time (e.g., 17:00)
+
+    **Assignment:**
+    - **Técnico Responsable**: Assign to specific technician from dropdown
+    - Shows technicians available in the system
+
+    **Description:**
+    - **Descripción**: Multi-line text field for event details
+    - Include work to be performed, expected outcomes
+
+    **Resources/Equipment:**
+    Click **+ Agregar** to add resource details:
+    - **Recurso**: Select from project resources dropdown
+    - **Descripción**: Specific activity for this resource
+    - **Costo**: Cost for this specific task
+    - Add multiple resources if the event involves several items
+
+    **Notes:**
+    - **Notas**: Additional comments or instructions
+  </Step>
+
+  <Step title="Save Event">
+    Click **Crear Evento**.
+
+    The event appears as a green box in the calendar with:
+    - Event title (truncated if long)
+    - Status icon
+    - Colored border based on selected color
+  </Step>
+</Steps>
+
+### Event Form Example
+
+```
+Título: Mantenimiento Preventivo Bomba
+Tipo: Mantenimiento
+Prioridad: Alta
+Color: #10B981 (Green)
+
+Fecha Inicio: 2024-03-15
+Fecha Fin: 2024-03-15
+Hora Inicio: 08:00
+Hora Fin: 12:00
+
+Técnico Responsable: Juan Pérez
+
+Descripción:
+Revisión general de bomba sumergible
+- Verificar motor
+- Limpiar filtros
+- Revisar conexiones eléctricas
+
+Recursos:
+1. PU-001 - Revisión motor - Q200.00
+2. PU-001 - Cambio filtros - Q150.00
+
+Notas:
+Cliente solicita fotos del estado de los filtros
+```
+
+---
+
+## Managing Calendar Events
+
+### Viewing Event Details
+
+<Steps>
+  <Step title="Click Event in Calendar">
+    Click the green event box in any day cell.
+  </Step>
+
+  <Step title="Review Details">
+    The day detail modal shows:
+    - Event title
+    - Priority badge (color-coded)
+    - Event type badge
+    - Responsible technician
+    - Time range
+    - Full description
+    - Associated resources
+  </Step>
+</Steps>
+
+### Editing Events
+
+<Steps>
+  <Step title="Open Event">
+    Click the event box, then click **Edit icon** (pencil) in the detail modal.
+  </Step>
+
+  <Step title="Modify Fields">
+    Update any field in the event form.
+    
+    **New field available when editing:**
+    - **Estado**: Change status (Programado → En Progreso → Completado)
+  </Step>
+
+  <Step title="Save Changes">
+    Click **Actualizar Evento**.
+  </Step>
+</Steps>
+
+<Tip>
+Update event status as work progresses: Programado → En Progreso → Completado. This helps track maintenance compliance.
+</Tip>
+
+### Rescheduling Events (Drag-and-Drop)
+
+Quickly reschedule events by dragging:
+
+<Steps>
+  <Step title="Click and Hold Event">
+    In the calendar view, click and hold an event box.
+    
+    The event becomes semi-transparent (opacity-50).
+  </Step>
+
+  <Step title="Drag to New Date">
+    Drag the event to a different day cell.
+    
+    The target day highlights with a blue ring.
+  </Step>
+
+  <Step title="Drop Event">
+    Release the mouse button.
+    
+    The event moves to the new date immediately. Start/end dates are updated automatically.
+  </Step>
+</Steps>
+
+<Warning>
+Drag-and-drop only changes the date. Times and other details remain the same. Edit the event if you need to change time or other fields.
+</Warning>
+
+### Deleting Events
+
+<Steps>
+  <Step title="Open Event Details">
+    Click the event, then click **Trash icon** in the modal.
+  </Step>
+
+  <Step title="Confirm Deletion">
+    Browser confirmation: "¿Eliminar el evento '[title]'?"
+    
+    Click **OK**.
+  </Step>
+
+  <Step title="Event Removed">
+    The event is deleted from the calendar and database.
+  </Step>
+</Steps>
+
+---
+
+## CalendarEvent Model Reference
+
+For developers and administrators:
+
+### Model Fields
+
+```python
+class CalendarEvent:
+    project = ForeignKey(Project)  # Associated project
+    title = CharField(max_length=200)  # Event name
+    description = TextField(blank=True)  # Detailed description
+    
+    # Event classification
+    event_type = CharField(choices=[
+        ('MAINTENANCE', 'Mantenimiento'),
+        ('INSTALLATION', 'Instalación'),
+        ('REMOVAL', 'Retiro'),
+        ('INSPECTION', 'Inspección'),
+        ('OTHER', 'Otro'),
+    ])
+    
+    # Priority and status
+    priority = CharField(choices=[
+        ('LOW', 'Baja'),
+        ('MEDIUM', 'Media'),
+        ('HIGH', 'Alta'),
+        ('URGENT', 'Urgente'),
+    ])
+    status = CharField(choices=[
+        ('SCHEDULED', 'Programado'),
+        ('IN_PROGRESS', 'En Progreso'),
+        ('COMPLETED', 'Completado'),
+        ('CANCELLED', 'Cancelado'),
+    ])
+    
+    # Schedule
+    start_date = DateField()  # Required
+    end_date = DateField(blank=True, null=True)
+    start_time = TimeField(blank=True, null=True)
+    end_time = TimeField(blank=True, null=True)
+    
+    # Assignment
+    responsible_technical = ForeignKey(Technical, null=True)
+    
+    # Visual
+    color = CharField(max_length=7, default='#3B82F6')  # Hex color
+    
+    # Additional info
+    notes = TextField(blank=True)
+    
+    # Related resources (via CalendarEventDetail)
+    details = ManyToMany(through='CalendarEventDetail')
+```
+
+### Event Details (Resources)
+
+```python
+class CalendarEventDetail:
+    calendar_event = ForeignKey(CalendarEvent)
+    project_resource_item = ForeignKey(ProjectResourceItem)
+    resource_item = ForeignKey(ResourceItem)  # Denormalized
+    description = TextField()  # Work performed
+    cost = DecimalField()  # Task-specific cost
+```
+
+---
+
+## Frequency Type Configuration Deep Dive
+
+### DAY Type: Interval-Based Scheduling
+
+**Configuration:**
+- `frequency_type`: "DAY"
+- `interval_days`: Integer (1-365)
+
+**Algorithm:**
+```javascript
+function scheduleDayType(resource, startDate, endDate) {
+  let schedules = [];
+  let currentDate = new Date(resource.operation_start_date);
+  
+  while (currentDate <= endDate) {
+    if (currentDate >= startDate) {
+      schedules.push({
+        date: currentDate,
+        resource: resource,
+        cost: resource.maintenance_cost
+      });
+    }
+    currentDate.setDate(currentDate.getDate() + resource.interval_days);
+  }
+  
+  return schedules;
+}
+```
+
+**Use Cases:**
+- Oil changes: Every 7 days
+- Filter replacement: Every 14 days
+- General inspection: Every 30 days
+
+**Example Output:**
+```
+Resource: PU-001
+Start: March 1
+Interval: 5 days
+
+March Schedule:
+- March 1 (start)
+- March 6 (1 + 5)
+- March 11 (6 + 5)
+- March 16 (11 + 5)
+- March 21 (16 + 5)
+- March 26 (21 + 5)
+- March 31 (26 + 5)
+```
+
+### WEEK Type: Weekday-Based Scheduling
+
+**Configuration:**
+- `frequency_type`: "WEEK"
+- `weekdays`: Array of integers [0-6] where 0=Monday, 6=Sunday
+
+**Algorithm:**
+```javascript
+function scheduleWeekType(resource, startDate, endDate) {
+  let schedules = [];
+  let currentDate = new Date(startDate);
+  
+  while (currentDate <= endDate) {
+    // getDay() returns 0=Sunday, so convert to Monday=0
+    let dayOfWeek = (currentDate.getDay() + 6) % 7;
+    
+    if (resource.weekdays.includes(dayOfWeek) && 
+        currentDate >= resource.operation_start_date) {
+      schedules.push({
+        date: currentDate,
+        resource: resource,
+        cost: resource.maintenance_cost
+      });
+    }
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return schedules;
+}
+```
+
+**Weekday Mapping:**
+```
+0 = Monday (Lunes)
+1 = Tuesday (Martes)
+2 = Wednesday (Miércoles)
+3 = Thursday (Jueves)
+4 = Friday (Viernes)
+5 = Saturday (Sábado)
+6 = Sunday (Domingo)
+```
+
+**Use Cases:**
+- Weekly service: Every Monday (weekdays=[0])
+- Business days: Mon-Fri (weekdays=[0,1,2,3,4])
+- Weekend checks: Sat-Sun (weekdays=[5,6])
+
+**Example Output:**
+```
+Resource: TQ-003
+Weekdays: Mon, Wed, Fri [0, 2, 4]
+
+March 2024 Schedule:
+- Mon, March 4
+- Wed, March 6
+- Fri, March 8
+- Mon, March 11
+- Wed, March 13
+- Fri, March 15
+...
+```
+
+### MONTH Type: Date-Based Scheduling
+
+**Configuration:**
+- `frequency_type`: "MONTH"
+- `monthdays`: Array of integers [1-31]
+
+**Algorithm:**
+```javascript
+function scheduleMonthType(resource, startDate, endDate) {
+  let schedules = [];
+  let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  
+  while (currentDate <= endDate) {
+    for (let day of resource.monthdays) {
+      let scheduleDate = new Date(currentDate.getFullYear(), 
+                                   currentDate.getMonth(), 
+                                   day);
+      
+      // Check if date is valid (e.g., Feb 31 doesn't exist)
+      if (scheduleDate.getDate() === day &&
+          scheduleDate >= startDate && 
+          scheduleDate <= endDate &&
+          scheduleDate >= resource.operation_start_date) {
+        schedules.push({
+          date: scheduleDate,
+          resource: resource,
+          cost: resource.maintenance_cost
+        });
+      }
+    }
+    
+    // Move to next month
+    currentDate.setMonth(currentDate.getMonth() + 1);
+  }
+  
+  return schedules;
+}
+```
+
+**Use Cases:**
+- Monthly billing: 1st of month (monthdays=[1])
+- Semi-monthly: 1st and 15th (monthdays=[1,15])
+- Quarterly: 1st, 10th, 20th (monthdays=[1,10,20])
+
+**Example Output:**
+```
+Resource: SN-007
+Month Days: [1, 15, 30]
+
+March 2024 Schedule:
+- March 1
+- March 15
+- March 30
+
+April 2024 Schedule:
+- April 1
+- April 15
+- April 30
+
+February 2024 Schedule:
+- February 1
+- February 15
+- (February 30 skipped - doesn't exist)
+```
+
+<Note>
+**Edge Case Handling:**
+If you configure day 31 for a month with only 30 days (or day 29-31 for February), that occurrence is automatically skipped.
+</Note>
+
+---
+
+## Best Practices
+
+### Scheduling Strategy
+
+1. **Start with Auto-Scheduling**: Configure resource maintenance frequencies during resource allocation
+2. **Create Events for Actual Work**: When maintenance is actually performed, create a calendar event
+3. **Link Events to Plans**: Use the same date and resource to connect confirmed events with planned maintenance
+4. **Update Status**: Move events through Programado → En Progreso → Completado as work progresses
+5. **Document Thoroughly**: Use descriptions and notes to record what was actually done
+
+### Color Coding Recommendations
+
+**By Priority:**
+- 🔴 Red (#EF4444): Urgent/High priority
+- 🟡 Yellow (#F59E0B): Medium priority
+- 🟢 Green (#10B981): Low priority/Routine
+- 🔵 Blue (#3B82F6): Inspections/Non-critical
+
+**By Event Type:**
+- 🟢 Green: Maintenance
+- 🔵 Blue: Inspections
+- 🟡 Yellow: Installations
+- 🟠 Orange: Removals
+- 🔴 Red: Emergency/Unplanned
+
+### Maintenance Compliance Tracking
+
+**Weekly Review:**
+1. Navigate to current week in calendar
+2. Count planned maintenance items (colored dots)
+3. Count completed events (green boxes with "Completado" status)
+4. Calculate compliance: `(completed / planned) × 100%`
+
+**Monthly Report:**
+1. View full month
+2. Export or screenshot calendar
+3. Review summary cards for total counts
+4. Check Costo Total vs. budget
+5. Identify any missed maintenance (planned but no corresponding event)
+
+---
+
+## Common Issues and Solutions
+
+<AccordionGroup>
+  <Accordion title="No maintenance appearing in calendar">
+    **Problem:** Calendar shows 0 Planificados despite resources with maintenance
+
+    **Checks:**
+    1. Resource has `include_maintenance` = true
+    2. Resource has `operation_start_date` in the past or present
+    3. Resource `frequency_type` is properly configured
+    4. For WEEK type: At least one weekday selected
+    5. For MONTH type: At least one month day selected
+    6. For DAY type: `interval_days` > 0
+
+    **Solution:**
+    - Go to Recursos Asignados tab
+    - Edit the resource
+    - Verify maintenance checkbox is checked
+    - Check frequency configuration
+    - Save and return to calendar
+  </Accordion>
+
+  <Accordion title="Drag-and-drop not working">
+    **Problem:** Cannot drag events to new dates
+
+    **Causes:**
+    1. Browser doesn't support HTML5 drag-and-drop
+    2. Event is not a confirmed calendar event (trying to drag planned maintenance)
+    3. JavaScript error preventing drag functionality
+
+    **Solution:**
+    - Only confirmed events (green boxes) can be dragged
+    - Planned maintenance (colored dots) cannot be dragged - edit resource frequency instead
+    - Try different browser (Chrome, Firefox, Edge recommended)
+    - Check browser console for errors (F12)
+    - Alternative: Use Edit event to change date manually
+  </Accordion>
+
+  <Accordion title="Cost calculation doesn't match expectations">
+    **Problem:** Costo Total card shows unexpected value
+
+    **Formula:**
+    ```
+    Total Cost = Σ (planned_maintenance_count × maintenance_cost)
+               + Σ (event_detail_costs)
+    ```
+
+    **Checks:**
+    1. Verify `maintenance_cost` on each resource
+    2. Count planned maintenance occurrences in month
+    3. Check event details for additional costs
+    4. Ensure no duplicate resources
+
+    **Solution:**
+    - Click days with maintenance to see detailed breakdown
+    - Review resource maintenance costs in Recursos tab
+    - Sum manually and compare
+    - Contact support if persistent discrepancy
+  </Accordion>
+
+  <Accordion title="Weekday maintenance on wrong days">
+    **Problem:** WEEK type showing maintenance on incorrect weekdays
+
+    **Cause:** Weekday array mapping confusion (0=Monday vs. 0=Sunday)
+
+    **Mantis Convention:**
+    - 0 = Monday (Lunes)
+    - 1 = Tuesday (Martes)
+    - ...
+    - 6 = Sunday (Domingo)
+
+    **Solution:**
+    - Edit resource maintenance configuration
+    - Click weekday buttons to verify selection
+    - Selected days should highlight in blue
+    - Save and verify in calendar
+    - If still incorrect, check browser locale settings
+  </Accordion>
+
+  <Accordion title="Month-based maintenance missing in February">
+    **Problem:** Configured day 30 or 31, but no maintenance in February
+
+    **Explanation:** This is expected behavior. February only has 28/29 days.
+
+    **Solution:**
+    - For consistent monthly maintenance, use days 1-28
+    - Alternatively, configure weekday-based (e.g., "last Monday of month")
+    - Or create manual events for short months
+    - Consider using DAY type with 30-day interval instead
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Calendar Workflow Example
+
+<Steps>
+  <Step title="Project Start: Configure Resources">
+    March 1: Add pump PU-001 to project
+    - Enable maintenance
+    - Frequency: Every 7 days (DAY type)
+    - Cost: Q200 per maintenance
+    - Start date: March 1
+  </Step>
+
+  <Step title="Week 1: View Auto-Schedule">
+    Open Calendar tab
+    - See blue dots on March 1, 8, 15, 22, 29
+    - Costo Total shows Q1,000 (5 occurrences × Q200)
+  </Step>
+
+  <Step title="March 8: Perform Maintenance">
+    Technician performs scheduled maintenance
+    - Click March 8 in calendar
+    - Create event:
+      - Title: "Mantenimiento Bomba PU-001"
+      - Type: Mantenimiento
+      - Priority: Media
+      - Resource: PU-001 - Revisión completa - Q200
+      - Description: "Cambio de aceite, revisión filtros"
+    - Save event
+  </Step>
+
+  <Step title="March 9: Update Status">
+    Work completed
+    - Click event on March 8
+    - Edit event
+    - Change status: Programado → Completado
+    - Add notes: "Filtros en buen estado, aceite cambiado"
+    - Save
+  </Step>
+
+  <Step title="March 14: Reschedule Next Maintenance">
+    Client requests delay
+    - Click event on March 15
+    - Drag to March 17
+    - Event automatically moves
+  </Step>
+
+  <Step title="Month End: Review Compliance">
+    March 31: Month review
+    - Planned: 5 maintenance occurrences
+    - Completed: 4 confirmed events (80% compliance)
+    - Missing: March 29 (to be rescheduled to April 2)
+  </Step>
+</Steps>
+
+---
+
+## Related Guides
+
+<CardGroup cols={3}>
+  <Card title="Resource Allocation" icon="chart-network" href="/guides/resource-allocation">
+    Configure resource maintenance frequencies
+  </Card>
+  <Card title="Project Management" icon="folder-open" href="/guides/project-management">
+    Manage project lifecycle and timelines
+  </Card>
+  <Card title="Document Management" icon="file-upload" href="/guides/document-management">
+    Upload maintenance reports and work sheets
+  </Card>
+</CardGroup>
+
+---
+
+## API Reference
+
+For developers integrating with the calendar:
+
+- **Get Month Events**: `GET /api/calendar/events/?project_id=<id>&year=2024&month=3`
+- **Create Event**: `POST /api/calendar/events/`
+- **Update Event**: `PUT /api/calendar/events/<event_id>/`
+- **Move Event**: `PATCH /api/calendar/events/<event_id>/move/` (body: `{"start_date": "2024-03-17"}`)
+- **Delete Event**: `DELETE /api/calendar/events/<event_id>/`
+- **Get Maintenance Schedule**: Client-side calculation via `generateMaintenanceSchedule()`
+
+See the [API Documentation](/api-reference) for detailed schemas and examples.

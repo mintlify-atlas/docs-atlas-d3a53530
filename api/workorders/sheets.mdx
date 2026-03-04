@@ -1,0 +1,353 @@
+---
+title: Work sheet API
+description: Manage work sheets for project billing and operations tracking
+---
+
+Work sheets (SheetProject) are billing documents that track daily operations, resources, and costs for projects. This API allows you to create, update, and manage work sheets and their line items.
+
+## Endpoints
+
+### List project sheets
+
+<Note>
+Get all work sheets for a specific project.
+</Note>
+
+```bash
+GET /api/workorders/sheets/project/{project_id}/
+```
+
+<ParamField path="project_id" type="integer" required>
+  The ID of the project to retrieve sheets for
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "project_id": 5,
+      "series_code": "PSL-PS-2025-0001",
+      "date": "2025-03-01",
+      "status": "IN_PROGRESS",
+      "subtotal": "1500.00",
+      "tax_percentage": "15.00",
+      "tax_amount": "225.00",
+      "total": "1725.00"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### Create work sheet
+
+```bash
+POST /api/workorders/sheets/create/
+```
+
+Creates a new work sheet for a project with automatic series code generation.
+
+<ParamField body="project_id" type="integer" required>
+  Project to associate the work sheet with
+</ParamField>
+
+<ParamField body="date" type="string" required>
+  Date of the work sheet (YYYY-MM-DD format)
+</ParamField>
+
+<ParamField body="status" type="string" default="IN_PROGRESS">
+  Sheet status. Options: `IN_PROGRESS`, `LIQUIDATED`, `INVOICED`
+</ParamField>
+
+<ParamField body="observations" type="string">
+  Additional notes or observations
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Work sheet created successfully",
+  "data": {
+    "id": 1,
+    "series_code": "PSL-PS-2025-0001",
+    "project_id": 5,
+    "date": "2025-03-01",
+    "status": "IN_PROGRESS"
+  }
+}
+```
+</ResponseExample>
+
+### Update work sheet
+
+```bash
+PUT /api/workorders/sheets/update/
+```
+
+Updates an existing work sheet.
+
+<ParamField body="id" type="integer" required>
+  ID of the work sheet to update
+</ParamField>
+
+<ParamField body="date" type="string">
+  New date (YYYY-MM-DD format)
+</ParamField>
+
+<ParamField body="status" type="string">
+  New status: `IN_PROGRESS`, `LIQUIDATED`, `INVOICED`
+</ParamField>
+
+<ParamField body="observations" type="string">
+  Updated observations
+</ParamField>
+
+### Delete work sheet
+
+```bash
+DELETE /api/workorders/sheets/delete/
+```
+
+Soft deletes a work sheet (marks as inactive).
+
+<ParamField body="id" type="integer" required>
+  ID of the work sheet to delete
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Work sheet deleted successfully"
+}
+```
+</ResponseExample>
+
+### Get sheet items
+
+```bash
+GET /api/workorders/sheets/items/{sheet_project_id}/
+```
+
+Retrieves all line items (SheetProjectDetail) for a specific work sheet.
+
+<ParamField path="sheet_project_id" type="integer" required>
+  ID of the work sheet
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "date": "2025-03-01",
+      "description": "BAÑO SANITARIO HOMBRE BS-001",
+      "quantity": 1,
+      "unit_price": "50.00",
+      "subtotal": "50.00",
+      "reference_document": "REF-001"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### Update sheet detail days
+
+```bash
+PUT /api/workorders/sheets/detail/{detail_id}/days/
+```
+
+Updates the days/quantity for a specific sheet detail line item.
+
+<ParamField path="detail_id" type="integer" required>
+  ID of the sheet detail item
+</ParamField>
+
+<ParamField body="days" type="number" required>
+  Number of days/quantity
+</ParamField>
+
+### Reopen work sheet
+
+```bash
+POST /api/workorders/sheets/reopen/
+```
+
+Reopens a liquidated or invoiced work sheet, changing its status back to IN_PROGRESS.
+
+<ParamField body="id" type="integer" required>
+  ID of the work sheet to reopen
+</ParamField>
+
+<Warning>
+Reopening a sheet may affect financial reports. Ensure this action is authorized.
+</Warning>
+
+## Work sheet model
+
+<ResponseField name="id" type="integer">
+  Unique identifier
+</ResponseField>
+
+<ResponseField name="project" type="object">
+  Associated project
+</ResponseField>
+
+<ResponseField name="series_code" type="string">
+  Auto-generated series code (format: PSL-PS-YYYY-NNNN)
+</ResponseField>
+
+<ResponseField name="date" type="string">
+  Sheet date (YYYY-MM-DD)
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status: `IN_PROGRESS`, `LIQUIDATED`, `INVOICED`
+</ResponseField>
+
+<ResponseField name="subtotal" type="decimal">
+  Sum of all line items before tax
+</ResponseField>
+
+<ResponseField name="tax_percentage" type="decimal">
+  Tax percentage applied (default 15%)
+</ResponseField>
+
+<ResponseField name="tax_amount" type="decimal">
+  Calculated tax amount
+</ResponseField>
+
+<ResponseField name="total" type="decimal">
+  Final total including tax
+</ResponseField>
+
+<ResponseField name="observations" type="string">
+  Additional notes
+</ResponseField>
+
+<ResponseField name="is_deleted" type="boolean">
+  Soft delete flag
+</ResponseField>
+
+## Sheet detail model
+
+Line items within a work sheet:
+
+<ResponseField name="id" type="integer">
+  Unique identifier
+</ResponseField>
+
+<ResponseField name="sheet_project" type="object">
+  Parent work sheet
+</ResponseField>
+
+<ResponseField name="date" type="string">
+  Line item date
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Item description (typically equipment name and code)
+</ResponseField>
+
+<ResponseField name="quantity" type="decimal">
+  Quantity/days
+</ResponseField>
+
+<ResponseField name="unit_price" type="decimal">
+  Price per unit/day
+</ResponseField>
+
+<ResponseField name="subtotal" type="decimal">
+  quantity × unit_price
+</ResponseField>
+
+<ResponseField name="reference_document" type="string">
+  Reference document number
+</ResponseField>
+
+## Workflow example
+
+<Steps>
+  <Step title="Create a work sheet">
+    Create a new work sheet for billing:
+    
+    ```bash
+    curl -X POST https://mantis.peisol.com.ec/api/workorders/sheets/create/ \
+      -H "Content-Type: application/json" \
+      -d '{
+        "project_id": 5,
+        "date": "2025-03-01"
+      }'
+    ```
+  </Step>
+  
+  <Step title="Add line items">
+    Line items are typically created automatically based on project resources, or can be added manually through the UI.
+  </Step>
+  
+  <Step title="Update quantities">
+    Adjust days/quantities for each line item:
+    
+    ```bash
+    curl -X PUT https://mantis.peisol.com.ec/api/workorders/sheets/detail/1/days/ \
+      -H "Content-Type: application/json" \
+      -d '{"days": 5}'
+    ```
+  </Step>
+  
+  <Step title="Liquidate the sheet">
+    Change status to LIQUIDATED when ready for billing:
+    
+    ```bash
+    curl -X PUT https://mantis.peisol.com.ec/api/workorders/sheets/update/ \
+      -H "Content-Type: application/json" \
+      -d '{
+        "id": 1,
+        "status": "LIQUIDATED"
+      }'
+    ```
+  </Step>
+</Steps>
+
+## Best practices
+
+<AccordionGroup>
+  <Accordion title="Series code generation">
+    Series codes are automatically generated in the format `PSL-PS-YYYY-NNNN` where:
+    - PSL: Company prefix (PEISOL)
+    - PS: Document type (Project Sheet)
+    - YYYY: Current year
+    - NNNN: Sequential number
+  </Accordion>
+  
+  <Accordion title="Tax calculations">
+    Tax is automatically calculated as 15% (IVA) of the subtotal. The total is subtotal + tax_amount.
+  </Accordion>
+  
+  <Accordion title="Status workflow">
+    Follow this workflow:
+    1. **IN_PROGRESS**: Sheet is being created/edited
+    2. **LIQUIDATED**: Sheet is ready for invoicing
+    3. **INVOICED**: Sheet has been invoiced
+    
+    Use reopen endpoint to move back to IN_PROGRESS if needed.
+  </Accordion>
+</AccordionGroup>
+
+## Related endpoints
+
+<CardGroup cols={2}>
+  <Card title="Custody chains" icon="link" href="/api/workorders/custody-chains">
+    Track equipment custody and responsibility
+  </Card>
+  <Card title="Project resources" icon="boxes-stacked" href="/api/projects/resources">
+    Manage project resource allocation
+  </Card>
+</CardGroup>

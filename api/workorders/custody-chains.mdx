@@ -1,0 +1,392 @@
+---
+title: Custody chain API
+description: Track equipment custody transfers and waste disposal operations
+---
+
+Custody chains (CustodyChain) are critical documents for tracking waste disposal operations, equipment movement, and responsibility transfers. They ensure environmental compliance and accountability.
+
+## Endpoints
+
+### Create custody chain
+
+```bash
+POST /api/workorders/custody_chain/create/
+```
+
+Creates a new custody chain document for tracking waste disposal or equipment transfers.
+
+<ParamField body="sheet_project_id" type="integer" required>
+  Associated work sheet ID
+</ParamField>
+
+<ParamField body="date" type="string" required>
+  Date of custody transfer (YYYY-MM-DD format)
+</ParamField>
+
+<ParamField body="type_waste" type="string" required>
+  Type of waste being transferred. Options:
+  - `AGUAS NEGRAS` - Black water
+  - `AGUAS GRISES` - Grey water
+  - `AGUA LIMPIA` - Clean water
+  - `LODOS` - Sludge
+  - `RIPIOS` - Drilling cuttings
+  - `OTROS` - Other
+</ParamField>
+
+<ParamField body="volume_gallons" type="decimal">
+  Volume in gallons
+</ParamField>
+
+<ParamField body="volume_barrels" type="decimal">
+  Volume in barrels (1 barrel = 42 gallons)
+</ParamField>
+
+<ParamField body="volume_cubic_meters" type="decimal">
+  Volume in cubic meters
+</ParamField>
+
+<ParamField body="contact_name" type="string" required>
+  Name of responsible contact at destination
+</ParamField>
+
+<ParamField body="contact_phone" type="string">
+  Contact phone number
+</ParamField>
+
+<ParamField body="driver_name" type="string">
+  Driver name
+</ParamField>
+
+<ParamField body="driver_license" type="string">
+  Driver's license number
+</ParamField>
+
+<ParamField body="technical_name" type="string">
+  Technical staff name
+</ParamField>
+
+<ParamField body="observations" type="string">
+  Additional notes or observations
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Custody chain created successfully",
+  "data": {
+    "id": 42,
+    "sheet_project_id": 1,
+    "date": "2025-03-01",
+    "type_waste": "AGUAS NEGRAS",
+    "volume_gallons": "500.00",
+    "contact_name": "John Doe"
+  }
+}
+```
+</ResponseExample>
+
+### Get custody chain detail
+
+```bash
+GET /api/workorders/custody_chain/detail/{id}/
+```
+
+Retrieves complete details of a custody chain including all equipment items.
+
+<ParamField path="id" type="integer" required>
+  Custody chain ID
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "id": 42,
+    "sheet_project": {
+      "id": 1,
+      "series_code": "PSL-PS-2025-0001",
+      "project": {
+        "id": 5,
+        "partner_name": "PETROECUADOR"
+      }
+    },
+    "date": "2025-03-01",
+    "type_waste": "AGUAS NEGRAS",
+    "volume_gallons": "500.00",
+    "volume_barrels": "11.90",
+    "volume_cubic_meters": "1.89",
+    "contact_name": "John Doe",
+    "contact_phone": "+593987654321",
+    "driver_name": "Jane Smith",
+    "driver_license": "DL-123456",
+    "technical_name": "Tech-001",
+    "observations": "Normal disposal operation",
+    "equipment_items": [
+      {
+        "id": 1,
+        "resource_code": "BS-001",
+        "resource_name": "BATERIA SANITARIA HOMBRE",
+        "physical_equipment_code": 1
+      }
+    ]
+  }
+}
+```
+</ResponseExample>
+
+### Edit custody chain
+
+```bash
+PUT /api/workorders/custody_chain/{id}/edit/
+```
+
+Updates an existing custody chain.
+
+<ParamField path="id" type="integer" required>
+  Custody chain ID to update
+</ParamField>
+
+<ParamField body="date" type="string">
+  Updated date
+</ParamField>
+
+<ParamField body="type_waste" type="string">
+  Updated waste type
+</ParamField>
+
+<ParamField body="volume_gallons" type="decimal">
+  Updated volume in gallons
+</ParamField>
+
+<ParamField body="contact_name" type="string">
+  Updated contact name
+</ParamField>
+
+<ParamField body="observations" type="string">
+  Updated observations
+</ParamField>
+
+<Note>
+Only provide fields that need to be updated. Other fields will remain unchanged.
+</Note>
+
+### Regenerate equipment codes
+
+```bash
+POST /api/workorders/custody_chain/regenerate-codes/
+```
+
+Regenerates physical equipment codes for all equipment in a custody chain. Useful when equipment assignments change.
+
+<ParamField body="custody_chain_id" type="integer" required>
+  ID of the custody chain
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Equipment codes regenerated successfully",
+  "data": {
+    "custody_chain_id": 42,
+    "updated_items": 3
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+This action reassigns sequential codes to all equipment. Use carefully as it may affect printed documents.
+</Warning>
+
+## Custody chain model
+
+<ResponseField name="id" type="integer">
+  Unique identifier
+</ResponseField>
+
+<ResponseField name="sheet_project" type="object">
+  Associated work sheet
+</ResponseField>
+
+<ResponseField name="date" type="string">
+  Date of custody transfer
+</ResponseField>
+
+<ResponseField name="type_waste" type="string">
+  Type of waste: `AGUAS NEGRAS`, `AGUAS GRISES`, `AGUA LIMPIA`, `LODOS`, `RIPIOS`, `OTROS`
+</ResponseField>
+
+<ResponseField name="volume_gallons" type="decimal">
+  Volume in gallons
+</ResponseField>
+
+<ResponseField name="volume_barrels" type="decimal">
+  Volume in barrels (auto-calculated: gallons ÷ 42)
+</ResponseField>
+
+<ResponseField name="volume_cubic_meters" type="decimal">
+  Volume in cubic meters (auto-calculated: gallons × 0.00378541)
+</ResponseField>
+
+<ResponseField name="contact_name" type="string">
+  Responsible contact at destination
+</ResponseField>
+
+<ResponseField name="contact_phone" type="string">
+  Contact phone number
+</ResponseField>
+
+<ResponseField name="driver_name" type="string">
+  Driver performing the transfer
+</ResponseField>
+
+<ResponseField name="driver_license" type="string">
+  Driver's license number
+</ResponseField>
+
+<ResponseField name="technical_name" type="string">
+  Technical staff responsible
+</ResponseField>
+
+<ResponseField name="observations" type="text">
+  Additional notes
+</ResponseField>
+
+<ResponseField name="is_deleted" type="boolean">
+  Soft delete flag
+</ResponseField>
+
+## Chain custody detail model
+
+Equipment items tracked in the custody chain:
+
+<ResponseField name="id" type="integer">
+  Unique identifier
+</ResponseField>
+
+<ResponseField name="custody_chain" type="object">
+  Parent custody chain
+</ResponseField>
+
+<ResponseField name="resource_item" type="object">
+  The equipment/resource being tracked
+</ResponseField>
+
+<ResponseField name="physical_equipment_code" type="integer">
+  Sequential code for this custody chain (e.g., 1, 2, 3)
+</ResponseField>
+
+## Waste type reference
+
+<CardGroup cols={2}>
+  <Card title="Aguas negras" icon="droplet">
+    Black water from sanitary facilities
+  </Card>
+  <Card title="Aguas grises" icon="water">
+    Grey water from washing stations
+  </Card>
+  <Card title="Agua limpia" icon="glass-water">
+    Clean water storage and transfer
+  </Card>
+  <Card title="Lodos" icon="fill-drip">
+    Sludge from treatment processes
+  </Card>
+  <Card title="Ripios" icon="cubes">
+    Drilling cuttings and waste
+  </Card>
+  <Card title="Otros" icon="ellipsis">
+    Other waste types
+  </Card>
+</CardGroup>
+
+## Workflow example
+
+<Steps>
+  <Step title="Create custody chain">
+    Create a new custody chain for waste disposal:
+    
+    ```bash
+    curl -X POST https://mantis.peisol.com.ec/api/workorders/custody_chain/create/ \
+      -H "Content-Type: application/json" \
+      -d '{
+        "sheet_project_id": 1,
+        "date": "2025-03-01",
+        "type_waste": "AGUAS NEGRAS",
+        "volume_gallons": 500,
+        "contact_name": "John Doe",
+        "contact_phone": "+593987654321",
+        "driver_name": "Jane Smith",
+        "driver_license": "DL-123456"
+      }'
+    ```
+  </Step>
+  
+  <Step title="Equipment assignment">
+    Equipment items are automatically associated based on the project resources at the time of creation. Each item receives a sequential physical_equipment_code.
+  </Step>
+  
+  <Step title="Volume calculations">
+    When you specify volume_gallons, the system automatically calculates:
+    - volume_barrels = volume_gallons ÷ 42
+    - volume_cubic_meters = volume_gallons × 0.00378541
+  </Step>
+  
+  <Step title="Update if needed">
+    Edit the custody chain if information changes:
+    
+    ```bash
+    curl -X PUT https://mantis.peisol.com.ec/api/workorders/custody_chain/42/edit/ \
+      -H "Content-Type: application/json" \
+      -d '{
+        "volume_gallons": 600,
+        "observations": "Additional waste collected"
+      }'
+    ```
+  </Step>
+</Steps>
+
+## Best practices
+
+<AccordionGroup>
+  <Accordion title="Volume conversions">
+    The system uses the following conversion factors:
+    - 1 barrel = 42 gallons
+    - 1 gallon = 0.00378541 cubic meters
+    - 1 cubic meter = 264.172 gallons
+    
+    Enter volume in the most convenient unit; other units are calculated automatically.
+  </Accordion>
+  
+  <Accordion title="Environmental compliance">
+    Custody chains are legal documents for environmental compliance. Ensure:
+    - Accurate waste type classification
+    - Precise volume measurements
+    - Complete contact and driver information
+    - Proper equipment tracking
+  </Accordion>
+  
+  <Accordion title="Equipment codes">
+    Physical equipment codes are sequential numbers (1, 2, 3...) used to identify equipment in printed custody chain documents. Use the regenerate-codes endpoint if equipment assignments change after creation.
+  </Accordion>
+  
+  <Accordion title="Document integrity">
+    Once a custody chain is created and signed, avoid editing unless absolutely necessary. Changes should be tracked in the observations field or by creating a new custody chain.
+  </Accordion>
+</AccordionGroup>
+
+## Related endpoints
+
+<CardGroup cols={2}>
+  <Card title="Work sheets" icon="file-lines" href="/api/workorders/sheets">
+    Manage work sheets and billing
+  </Card>
+  <Card title="Project resources" icon="boxes-stacked" href="/api/projects/resources">
+    View equipment assigned to projects
+  </Card>
+  <Card title="Documents" icon="file-pdf" href="/api/documents/merge">
+    Generate and merge custody chain PDFs
+  </Card>
+</CardGroup>

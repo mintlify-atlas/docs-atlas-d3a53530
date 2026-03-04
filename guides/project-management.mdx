@@ -1,0 +1,326 @@
+---
+title: 'Project Management'
+description: 'Complete guide to creating and managing projects in Mantis'
+icon: 'folder-open'
+---
+
+# Project Management Guide
+
+Learn how to create, configure, and manage projects throughout their entire lifecycle in Mantis.
+
+## Overview
+
+Projects in Mantis are the central organizing unit for tracking resources, work orders, documents, and maintenance schedules. Each project represents a client engagement with specific equipment deployments at a designated location.
+
+<Note>
+Projects can exist in three states: **Open** (accepting new resources), **Active** (operational), and **Closed** (completed and archived).
+</Note>
+
+---
+
+## Creating a New Project
+
+<Steps>
+  <Step title="Navigate to Projects">
+    From the main menu, click on **Projects** or navigate to `/projects/` to access the project list view.
+  </Step>
+
+  <Step title="Click 'New Project'">
+    Click the **+ New Project** button in the top-right corner of the projects list.
+  </Step>
+
+  <Step title="Fill in Project Details">
+    Complete the project creation form with the following information:
+
+    **Client Information:**
+    - **Partner Name** (required): Select or enter the client/partner company name
+    - **Contact Name**: Primary contact person at the client site
+    - **Contact Phone**: Phone number for the primary contact
+
+    **Location Details:**
+    - **Campamento/Location** (required): The site or camp name where equipment will be deployed
+    - **Cardinal Point**: Geographic orientation (N, S, E, W, NE, NW, SE, SW) for the location
+
+    **Timeline:**
+    - **Start Date** (required): Project commencement date
+    - **End Date** (optional): Leave blank for ongoing projects - can be set later
+  </Step>
+
+  <Step title="Save the Project">
+    Click **Save** to create the project. You'll be redirected to the project detail view where you can begin assigning resources.
+  </Step>
+</Steps>
+
+<Tip>
+You can leave the **End Date** blank for ongoing projects. The system will display "EN CURSO" (In Progress) in the project view.
+</Tip>
+
+---
+
+## Project Detail View
+
+After creating a project, you'll see the Project Detail page (`/projects/<id>`) which includes:
+
+### Header Information
+
+The project header displays:
+- **Project ID**: Unique identifier for the project
+- **Status Badge**: Shows whether the project is Open (green) or Closed (red)
+- **Close Project Button**: Available only for open projects
+
+### Information Panel
+
+The project information is organized into three columns:
+
+**Column 1 - Project Data:**
+- Client/Partner name
+- Location with cardinal point badge
+
+**Column 2 - Timeline:**
+- Start date
+- End date (or "EN CURSO" if ongoing)
+
+**Column 3 - Contact Information:**
+- Contact person name
+- Contact phone number
+
+### Project Tabs
+
+The detail view includes five tabs for managing different aspects:
+
+<CardGroup cols={2}>
+  <Card title="Recursos Asignados" icon="tools" color="#F59E0B">
+    View and manage all resources (equipment and services) allocated to the project
+  </Card>
+  <Card title="Planillas de Trabajo" icon="file-invoice" color="#06B6D4">
+    Access work order sheets and custody chains for resource tracking
+  </Card>
+  <Card title="Calendario Mantenimientos" icon="calendar-alt" color="#84CC16">
+    Schedule and track maintenance events for project resources
+  </Card>
+  <Card title="Guías de Remisión" icon="truck" color="#14B8A6">
+    Manage shipping guides for equipment transfers
+  </Card>
+  <Card title="Documentos" icon="folder" color="#8B5CF6">
+    Upload and organize project documents including work sheets and custody chain PDFs
+  </Card>
+</CardGroup>
+
+<Info>
+Tab selection is persisted in the URL using the `?tab=` query parameter, allowing you to bookmark specific sections.
+</Info>
+
+---
+
+## Managing Project Lifecycle
+
+### Active Project Operations
+
+While a project is open, you can:
+- Add and remove resources (equipment and services)
+- Create work order sheets
+- Schedule maintenance events
+- Upload documents
+- Generate custody chain reports
+- Manage shipping guides
+
+### Closing a Project
+
+When a project engagement ends, follow these steps:
+
+<Steps>
+  <Step title="Click 'Close Project'">
+    From the project detail view, click the **Close Project** button (red button with lock icon) in the top-right corner.
+  </Step>
+
+  <Step title="Review Validation Alerts">
+    The system will validate the project state and display alerts:
+
+    **Error Alerts (Red)** - Must be resolved before closing:
+    - Resources still rented to the project (status: RENTADO)
+    - Pending work order sheets
+    - Incomplete document uploads
+
+    **Warning Alerts (Yellow)** - Can proceed but should review:
+    - Missing end dates on resources
+    - Pending maintenance events
+
+    **Info Alerts (Blue)** - Informational only:
+    - Summary of resources to be released
+    - Document completion status
+  </Step>
+
+  <Step title="Resolve Any Blocking Issues">
+    If there are error alerts, you must:
+    - Release or retire all rented resources (see [Resource Allocation Guide](/guides/resource-allocation))
+    - Complete or close all work sheets
+    - Upload required documents
+
+    The modal provides links to the relevant sections for each issue.
+  </Step>
+
+  <Step title="Confirm Project Closure">
+    Once all validations pass (only warnings/info remaining), click **Confirm Closure**.
+
+    The system will:
+    - Set project status to "Closed"
+    - Release all resources with status changes (RENTADO → DISPONIBLE)
+    - Lock the project from further edits
+    - Generate final reports
+  </Step>
+</Steps>
+
+<Warning>
+**Project closure is irreversible.** Ensure all documentation is complete and accurate before confirming.
+</Warning>
+
+---
+
+## Best Practices
+
+### During Project Setup
+
+1. **Complete Contact Information**: Always enter accurate contact details for on-site communication
+2. **Use Cardinal Points**: Specify location orientation to help technicians identify the correct site
+3. **Set Realistic Start Dates**: Align the project start date with actual resource deployment dates
+
+### During Project Execution
+
+1. **Regular Resource Reviews**: Check the Resources tab weekly to verify equipment status
+2. **Document Everything**: Upload all work sheets, custody chains, and shipping guides promptly
+3. **Track Maintenance**: Use the Calendar tab to stay ahead of scheduled maintenance
+4. **Monitor Costs**: Review the cost summary in the Resources tab to track project expenses
+
+### Before Closing a Project
+
+1. **Final Resource Audit**: Verify all equipment has been returned or properly retired
+2. **Complete Documentation**: Ensure 100% document upload completion (check the progress bar in Documents tab)
+3. **Review Work Sheets**: Close or finalize all pending work order sheets
+4. **Set End Dates**: Add end dates to all resources to accurately reflect the project timeline
+5. **Generate Reports**: Download merged PDF reports for archival before closure
+
+---
+
+## Project Workflow Example
+
+<Steps>
+  <Step title="Week 1: Project Setup">
+    - Create project with client "MINERA XYZ" at "Campamento Norte (N)"
+    - Set start date: 2024-03-01
+    - Add contact: Juan Perez, +502 5555-1234
+  </Step>
+
+  <Step title="Week 1-2: Resource Allocation">
+    - Assign 5 water tanks (equipment)
+    - Assign 1 pump service with maintenance schedule
+    - Set operation start dates
+    - Configure maintenance frequencies (daily for pump, weekly for tanks)
+  </Step>
+
+  <Step title="Weeks 2-12: Active Operations">
+    - Create biweekly work sheets
+    - Generate custody chains for each site visit
+    - Upload signed documents to Documents tab
+    - Track maintenance events in Calendar
+    - Record any equipment issues or repairs
+  </Step>
+
+  <Step title="Week 12: Project Completion">
+    - Create final work sheet
+    - Generate shipping guides for equipment return
+    - Upload all final documentation
+    - Set end dates on all resources
+    - Click "Close Project" and resolve any validation issues
+  </Step>
+
+  <Step title="Post-Closure">
+    - Download merged PDF of all project documents
+    - Archive in company file system
+    - Project appears as "Closed" in projects list
+  </Step>
+</Steps>
+
+---
+
+## Common Issues and Solutions
+
+<AccordionGroup>
+  <Accordion title="Cannot close project - resources still rented">
+    **Problem**: The validation shows "Hay X recursos rentados que deben ser liberados"
+
+    **Solution**: 
+    1. Go to the **Recursos Asignados** tab
+    2. For each resource with status RENTADO:
+       - Click **Edit**
+       - Set an **operation_end_date**
+       - This will change status from RENTADO → DISPONIBLE
+    3. Return to close project and validate again
+  </Accordion>
+
+  <Accordion title="Missing project end date">
+    **Problem**: Project end date shows "EN CURSO" and you need to close
+
+    **Solution**:
+    This is informational only. You can close a project without setting the project-level end date. However, it's recommended to:
+    1. Edit the project details
+    2. Set an appropriate end date
+    3. This helps with historical reporting
+  </Accordion>
+
+  <Accordion title="Document upload progress not 100%">
+    **Problem**: Documents tab shows less than 100% completion
+
+    **Solution**:
+    1. Navigate to **Documentos** tab
+    2. Expand all work sheets (click "Expandir todo")
+    3. Look for items with red X icons (missing files)
+    4. Upload the missing documents using the upload button
+    5. Required documents include:
+       - Work sheet PDFs
+       - Custody chain PDFs
+       - Shipping guide PDFs
+  </Accordion>
+
+  <Accordion title="Cannot edit closed project">
+    **Problem**: Need to add information after project closure
+
+    **Solution**:
+    Closed projects are locked to prevent data corruption. If you absolutely must make changes:
+    1. Contact system administrator
+    2. Request project reopening (requires database access)
+    3. Make necessary edits
+    4. Re-close the project
+
+    **Alternative**: Create a new project for any continued work with the client.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Related Guides
+
+<CardGroup cols={3}>
+  <Card title="Resource Allocation" icon="chart-network" href="/guides/resource-allocation">
+    Learn how to add and manage resources in projects
+  </Card>
+  <Card title="Document Management" icon="file-upload" href="/guides/document-management">
+    Upload and organize project documents
+  </Card>
+  <Card title="Calendar Scheduling" icon="calendar-day" href="/guides/calendar-scheduling">
+    Schedule maintenance and track events
+  </Card>
+</CardGroup>
+
+---
+
+## API Reference
+
+For developers integrating with Mantis projects:
+
+- **Project Creation**: `POST /api/projects/create/`
+- **Project Details**: `GET /api/projects/<id>/`
+- **Close Project**: `POST /api/projects/<id>/close/`
+- **Validate Closure**: `GET /api/projects/<id>/validate-close/`
+- **Project Resources**: `GET /api/projects/<id>/resources/`
+
+See the [API Documentation](/api-reference) for complete endpoint details.

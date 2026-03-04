@@ -1,0 +1,217 @@
+---
+title: 'API Overview'
+description: 'Introduction to the Mantis REST API architecture and available endpoints'
+---
+
+## Base URL
+
+All API endpoints are prefixed with `/api/` and follow RESTful conventions:
+
+```
+https://mantis.peisol.com.ec/api/
+```
+
+For local development:
+
+```
+http://localhost:8000/api/
+```
+
+## Architecture
+
+The Mantis API is built using:
+
+- **Django REST Framework** - Robust REST API toolkit
+- **Django 4.2** - Backend framework
+- **JSON** - Response format for all endpoints
+- **Session-based authentication** - Secure authentication using django-user-sessions
+
+## Available API Modules
+
+The API is organized into the following modules:
+
+### Projects
+
+Manage project resources, assignments, and project lifecycle:
+
+- `GET /api/projects/resources/available/` - List available resources
+- `POST /api/projects/resources/add/` - Add resource to project
+- `POST /api/projects/resources/update/` - Update project resource
+- `DELETE /api/projects/resources/delete/<id>/` - Remove resource from project
+- `POST /api/projects/resources/release/` - Release resource from project
+- `GET /api/projects/<project_id>/resources/` - Get project resources
+- `GET /api/projects/all-info/<project_id>/` - Get complete project information
+- `POST /api/projects/<project_id>/close/` - Close a project
+
+### Equipment
+
+Manage equipment and resources:
+
+- `POST /api/resources/update/` - Update resource information
+
+### Work Orders
+
+Manage work order sheets, custody chains, and project items:
+
+- `GET /api/workorders/sheets/project/<project_id>/` - List all sheets for a project
+- `POST /api/workorders/sheets/create/` - Create new work sheet
+- `POST /api/workorders/sheets/update/` - Update work sheet
+- `DELETE /api/workorders/sheets/delete/` - Delete work sheet
+- `POST /api/workorders/sheets/detail/<detail_id>/days/` - Update sheet detail days
+- `POST /api/workorders/sheets/reopen/` - Reopen a work sheet
+- `GET /api/workorders/sheets/items/<sheet_project_id>/` - Get sheet items
+- `POST /api/workorders/custody_chain/create/` - Create custody chain
+- `GET /api/workorders/custody_chain/detail/<id>/` - Get custody chain details
+- `PUT /api/workorders/custody_chain/<id>/edit/` - Edit custody chain
+- `POST /api/workorders/custody_chain/regenerate-codes/` - Regenerate equipment codes
+
+### Vehicles
+
+Manage vehicle certifications and passes:
+
+- `POST /api/vehicles/cert_vehicle/` - Create/update vehicle certification
+- `DELETE /api/vehicles/cert_vehicle/<pk>/` - Delete vehicle certification
+- `POST /api/vehicles/pass_vehicle/` - Create/update vehicle pass
+- `DELETE /api/vehicles/pass_vehicle/<pk>/` - Delete vehicle pass
+- `GET /api/vehicles/avaliables/` - List available vehicles
+
+### Technicals
+
+Manage technical personnel passes and vaccines:
+
+- `POST /api/technicals/create_update_pass_technical/` - Create/update technical pass
+- `POST /api/technicals/create_update_vaccine/` - Create/update vaccine record
+- `DELETE /api/technicals/delete_pass_technical/` - Delete technical pass
+- `DELETE /api/technicals/delete_vaccine/` - Delete vaccine record
+- `GET /api/technicals/avaliables/` - List available technicals
+
+### Documents
+
+Centralized file management and document operations:
+
+- `POST /api/load_files/` - Upload files
+- `GET /api/load_files/fields/` - Get model file fields
+- `GET /api/load_files/tree/` - Get document tree
+- `GET /api/load_files/project/<project_id>/tree/` - Get project document tree
+- `POST /api/load_files/project/<project_id>/merge/` - Merge project documents
+- `POST /api/load_files/project/<project_id>/bulk_custody/` - Bulk custody upload
+- `GET /api/load_files/sheet/<sheet_id>/merge-generated/` - Merge generated sheet documents
+- `GET /api/load_files/vehicle/<vehicle_id>/merge-generated/` - Merge generated vehicle documents
+- `GET /api/load_files/technical/<technical_id>/merge-generated/` - Merge generated technical documents
+
+### Shipping Guides
+
+Manage shipping guides:
+
+- `GET /api/shipping/guides/` - List shipping guides
+- `POST /api/shipping/guides/` - Create shipping guide
+- `GET /api/shipping/guides/<guide_id>/` - Get shipping guide details
+- `PUT /api/shipping/guides/<guide_id>/` - Update shipping guide
+- `DELETE /api/shipping/guides/<pk>/delete/` - Delete shipping guide
+
+### Maintenance
+
+Manage maintenance sheets:
+
+- `GET /api/maintenance/sheets/` - List maintenance sheets
+- `POST /api/maintenance/sheets/` - Create maintenance sheet
+- `GET /api/maintenance/sheets/<sheet_id>/` - Get maintenance sheet details
+- `PUT /api/maintenance/sheets/<sheet_id>/` - Update maintenance sheet
+- `DELETE /api/maintenance/sheets/<pk>/delete/` - Delete maintenance sheet
+
+### Calendar
+
+Manage calendar events:
+
+- `GET /api/calendar/events/` - List calendar events
+- `POST /api/calendar/events/` - Create calendar event
+- `GET /api/calendar/events/<event_id>/` - Get event details
+- `PUT /api/calendar/events/<event_id>/` - Update event
+- `POST /api/calendar/events/<event_id>/move/` - Move event
+- `DELETE /api/calendar/events/<pk>/delete/` - Delete event
+
+## Response Format
+
+All API responses are returned in JSON format with the following structure:
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "code": "EQ-001",
+      "name": "Equipment Name",
+      "type_equipment": "MAQUIN",
+      "status_disponibility": "DISPONIBLE",
+      "available": true
+    }
+  ]
+}
+```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "error": "Error message describing what went wrong",
+  "code": "ERROR_CODE"
+}
+```
+
+## HTTP Status Codes
+
+The API uses standard HTTP status codes:
+
+- `200 OK` - Request succeeded
+- `201 Created` - Resource created successfully
+- `400 Bad Request` - Invalid request parameters
+- `401 Unauthorized` - Authentication required
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Server error
+
+## Error Handling
+
+When an error occurs, the API returns an appropriate HTTP status code along with a JSON response containing error details:
+
+```json
+{
+  "success": false,
+  "error": "Detailed error message",
+  "field_errors": {
+    "email": ["This field is required"],
+    "password": ["Password must be at least 8 characters"]
+  }
+}
+```
+
+## CORS Configuration
+
+The API supports Cross-Origin Resource Sharing (CORS) with the following configuration:
+
+- **CORS_ORIGIN_ALLOW_ALL**: Enabled for all origins
+- **Trusted Origins**: Specific domains are whitelisted for CSRF protection
+  - `https://mantis.peisol.com.ec`
+  - `http://localhost:8000` (development)
+  - Additional development and staging origins
+
+## Rate Limiting
+
+<Note>
+Rate limiting policies may apply to prevent abuse. Contact your system administrator for specific limits.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/api/authentication">
+    Learn how to authenticate API requests
+  </Card>
+  <Card title="Projects API" icon="folder" href="/api/projects/resources">
+    Manage projects and resources
+  </Card>
+</CardGroup>

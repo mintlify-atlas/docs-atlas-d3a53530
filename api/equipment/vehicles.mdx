@@ -1,0 +1,578 @@
+---
+title: 'Vehicles'
+description: 'API endpoints for managing vehicles, certifications, and passes'
+---
+
+## Overview
+
+The Vehicles API provides endpoints for managing vehicles, their certifications, and access passes for different operational blocks.
+
+## Vehicle Certifications
+
+### Create or Update Vehicle Certification
+
+<CodeGroup>
+```bash POST /api/vehicles/cert_vehicle/
+curl -X POST https://api.mantis.com/api/vehicles/cert_vehicle/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "vehicle_id": 1,
+    "name": "INSPECCION VOLUMETRICA",
+    "date_start": "2024-01-01",
+    "date_end": "2025-01-01",
+    "description": "Annual volumetric inspection"
+  }'
+```
+
+```bash PUT /api/vehicles/cert_vehicle/
+curl -X PUT https://api.mantis.com/api/vehicles/cert_vehicle/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 1,
+    "vehicle_id": 1,
+    "name": "INSPECCION VOLUMETRICA",
+    "date_start": "2024-01-01",
+    "date_end": "2025-06-01",
+    "description": "Updated inspection period"
+  }'
+```
+</CodeGroup>
+
+Manage vehicle certifications including volumetric inspections, thickness measurements, safety inspections, and hydrostatic tests.
+
+#### Request Body
+
+<ParamField body="vehicle_id" type="integer" required>
+  ID of the vehicle to certify
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Type of certification. Valid options:
+  - `INSPECCION VOLUMETRICA` - Volumetric Inspection
+  - `MEDICION DE ESPESORES` - Thickness Measurement
+  - `INSPECCION DE SEGURIDAD` - Safety Inspection
+  - `PRUEBA HIDROSTATICA` - Hydrostatic Test
+</ParamField>
+
+<ParamField body="date_start" type="string" required>
+  Certification start date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField body="date_end" type="string" required>
+  Certification expiration date in `YYYY-MM-DD` format. Must be after `date_start`
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description or notes about the certification
+</ParamField>
+
+<ParamField body="id" type="integer">
+  Required for PUT requests. ID of the certification to update
+</ParamField>
+
+#### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the operation was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Success or error message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <ResponseField name="id" type="integer">
+    Certification ID
+  </ResponseField>
+  
+  <ResponseField name="vehicle_id" type="integer">
+    Associated vehicle ID
+  </ResponseField>
+  
+  <ResponseField name="vehicle_plate" type="string">
+    Vehicle license plate number
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Certification type code
+  </ResponseField>
+  
+  <ResponseField name="name_display" type="string">
+    Human-readable certification type
+  </ResponseField>
+  
+  <ResponseField name="date_start" type="string">
+    Start date in ISO format
+  </ResponseField>
+  
+  <ResponseField name="date_end" type="string">
+    End date in ISO format
+  </ResponseField>
+  
+  <ResponseField name="description" type="string">
+    Certification description
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="string">
+    Timestamp when certification was created
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="string">
+    Timestamp when certification was last updated
+  </ResponseField>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "success": true,
+  "message": "Certificación de vehículo creada exitosamente",
+  "data": {
+    "id": 1,
+    "vehicle_id": 1,
+    "vehicle_plate": "ABC-123",
+    "name": "INSPECCION VOLUMETRICA",
+    "name_display": "Inspección Volumétrica",
+    "date_start": "2024-01-01",
+    "date_end": "2025-01-01",
+    "description": "Annual volumetric inspection",
+    "created_at": "2024-01-01T10:00:00Z",
+    "updated_at": "2024-01-01T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Delete Vehicle Certification
+
+```bash DELETE /api/vehicles/cert_vehicle/{pk}/
+curl -X DELETE https://api.mantis.com/api/vehicles/cert_vehicle/1/
+```
+
+Soft-deletes a vehicle certification by marking it as inactive.
+
+#### Path Parameters
+
+<ParamField path="pk" type="integer" required>
+  ID of the certification to delete
+</ParamField>
+
+## Vehicle Passes
+
+### Create or Update Vehicle Pass
+
+<CodeGroup>
+```bash POST /api/vehicles/pass_vehicle/
+curl -X POST https://api.mantis.com/api/vehicles/pass_vehicle/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "vehicle_id": 1,
+    "bloque": "PETROECUADOR",
+    "fecha_caducidad": "2024-12-31"
+  }'
+```
+
+```bash PUT /api/vehicles/pass_vehicle/
+curl -X PUT https://api.mantis.com/api/vehicles/pass_vehicle/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 1,
+    "vehicle_id": 1,
+    "bloque": "PETROECUADOR",
+    "fecha_caducidad": "2025-12-31"
+  }'
+```
+</CodeGroup>
+
+Manage vehicle access passes for operational blocks.
+
+#### Request Body
+
+<ParamField body="vehicle_id" type="integer" required>
+  ID of the vehicle
+</ParamField>
+
+<ParamField body="bloque" type="string" required>
+  Operational block name. Valid options:
+  - `PETROECUADOR`
+  - `SHAYA`
+  - `CONSORCIO SHUSHUFINDI`
+  - `ENAP SIPEC`
+  - `ORION`
+  - `ANDES PETROLEUM`
+  - `PARDALIS SERVICES`
+  - `FRONTERA ENERGY`
+  - `GRAN TIERRA`
+  - `PCR`
+  - `HALLIBURTON`
+  - `GENTE OIL`
+  - `TRIBIOL GAS`
+  - `ADICO`
+  - `CUYAVENO PETRO`
+  - `GEOPARK`
+</ParamField>
+
+<ParamField body="fecha_caducidad" type="string" required>
+  Pass expiration date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField body="id" type="integer">
+  Required for PUT requests. ID of the pass to update
+</ParamField>
+
+#### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the operation was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Success or error message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <ResponseField name="id" type="integer">
+    Pass ID
+  </ResponseField>
+  
+  <ResponseField name="vehicle_id" type="integer">
+    Associated vehicle ID
+  </ResponseField>
+  
+  <ResponseField name="vehicle_plate" type="string">
+    Vehicle license plate number
+  </ResponseField>
+  
+  <ResponseField name="bloque" type="string">
+    Operational block name
+  </ResponseField>
+  
+  <ResponseField name="fecha_caducidad" type="string">
+    Pass expiration date
+  </ResponseField>
+  
+  <ResponseField name="pass_file_url" type="string">
+    URL to the pass document file (if uploaded)
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="string">
+    Timestamp when pass was created
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="string">
+    Timestamp when pass was last updated
+  </ResponseField>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "success": true,
+  "message": "Pase de vehículo creado exitosamente",
+  "data": {
+    "id": 1,
+    "vehicle_id": 1,
+    "vehicle_plate": "ABC-123",
+    "bloque": "PETROECUADOR",
+    "fecha_caducidad": "2024-12-31",
+    "pass_file_url": "/media/vehicles/passes/pass_123.pdf",
+    "created_at": "2024-01-01T10:00:00Z",
+    "updated_at": "2024-01-01T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Delete Vehicle Pass
+
+```bash DELETE /api/vehicles/pass_vehicle/{pk}/
+curl -X DELETE https://api.mantis.com/api/vehicles/pass_vehicle/1/
+```
+
+Soft-deletes a vehicle pass by marking it as inactive.
+
+#### Path Parameters
+
+<ParamField path="pk" type="integer" required>
+  ID of the pass to delete
+</ParamField>
+
+## Available Vehicles
+
+### Get Available Vehicles
+
+```bash GET /api/vehicles/avaliables/
+curl https://api.mantis.com/api/vehicles/avaliables/
+```
+
+Retrieves all active vehicles with their complete information including passes and certifications.
+
+#### Response
+
+<ResponseField name="data" type="array">
+  Array of vehicle objects with complete details
+  
+  <ResponseField name="id" type="integer">
+    Vehicle ID
+  </ResponseField>
+  
+  <ResponseField name="brand" type="string">
+    Vehicle brand (e.g., "CHEVROLET", "TOYOTA")
+  </ResponseField>
+  
+  <ResponseField name="model" type="string">
+    Vehicle model
+  </ResponseField>
+  
+  <ResponseField name="type_vehicle" type="string">
+    Vehicle type: `CAMION`, `VACUUM`, `CAMIONETA`, `PLATAFORMA`, or `AUTO`
+  </ResponseField>
+  
+  <ResponseField name="year" type="integer">
+    Vehicle year
+  </ResponseField>
+  
+  <ResponseField name="no_plate" type="string">
+    License plate number (unique)
+  </ResponseField>
+  
+  <ResponseField name="status_vehicle" type="string">
+    Vehicle status: `DISPONIBLE`, `EN MANTENIMIENTO`, or `STANBY`
+  </ResponseField>
+  
+  <ResponseField name="status_cert_oper" type="string">
+    Certification status: `VIGENTE`, `VENCIDO`, `NO APLICA`, `POR VENCER`, `EN TRAMITE`, or `RECHAZADO`
+  </ResponseField>
+  
+  <ResponseField name="date_cert_oper" type="string">
+    Operation certificate issue date
+  </ResponseField>
+  
+  <ResponseField name="due_date_cert_oper" type="string">
+    Operation certificate expiration date
+  </ResponseField>
+  
+  <ResponseField name="date_matricula" type="string">
+    Registration date
+  </ResponseField>
+  
+  <ResponseField name="due_date_matricula" type="string">
+    Registration expiration date
+  </ResponseField>
+  
+  <ResponseField name="date_mtop" type="string">
+    MTOP (Ministry of Transport) date
+  </ResponseField>
+  
+  <ResponseField name="due_date_mtop" type="string">
+    MTOP expiration date
+  </ResponseField>
+  
+  <ResponseField name="date_technical_review" type="string">
+    Technical review date
+  </ResponseField>
+  
+  <ResponseField name="due_date_technical_review" type="string">
+    Technical review expiration date
+  </ResponseField>
+  
+  <ResponseField name="nro_poliza" type="string">
+    Insurance policy number
+  </ResponseField>
+  
+  <ResponseField name="insurance_company" type="string">
+    Insurance company name
+  </ResponseField>
+  
+  <ResponseField name="insurance_expiration_date" type="string">
+    Insurance expiration date
+  </ResponseField>
+  
+  <ResponseField name="insurance_issue_date" type="string">
+    Insurance issue date
+  </ResponseField>
+  
+  <ResponseField name="serial_number" type="string">
+    Vehicle serial number
+  </ResponseField>
+  
+  <ResponseField name="engine_number" type="string">
+    Engine number
+  </ResponseField>
+  
+  <ResponseField name="chassis_number" type="string">
+    Chassis number
+  </ResponseField>
+  
+  <ResponseField name="passes" type="array">
+    Array of vehicle passes
+    <ResponseField name="id" type="integer">
+      Pass ID
+    </ResponseField>
+    <ResponseField name="bloque" type="string">
+      Operational block name
+    </ResponseField>
+    <ResponseField name="fecha_caducidad" type="string">
+      Pass expiration date
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="certifications" type="array">
+    Array of vehicle certifications
+    <ResponseField name="id" type="integer">
+      Certification ID
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Certification type code
+    </ResponseField>
+    <ResponseField name="name_display" type="string">
+      Human-readable certification name
+    </ResponseField>
+    <ResponseField name="date_start" type="string">
+      Certification start date
+    </ResponseField>
+    <ResponseField name="date_end" type="string">
+      Certification expiration date
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Certification description
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="notes" type="string">
+    Additional notes
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="string">
+    Creation timestamp
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="string">
+    Last update timestamp
+  </ResponseField>
+  
+  <ResponseField name="is_active" type="boolean">
+    Whether the vehicle is active
+  </ResponseField>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "id": 1,
+      "brand": "CHEVROLET",
+      "model": "D-MAX",
+      "type_vehicle": "CAMIONETA",
+      "year": 2022,
+      "no_plate": "ABC-123",
+      "status_vehicle": "DISPONIBLE",
+      "status_cert_oper": "VIGENTE",
+      "date_cert_oper": "2024-01-01",
+      "due_date_cert_oper": "2025-01-01",
+      "nro_poliza": "POL-12345",
+      "insurance_company": "Seguros Sucre",
+      "insurance_expiration_date": "2024-12-31",
+      "serial_number": "SN123456",
+      "engine_number": "EN789012",
+      "chassis_number": "CH345678",
+      "passes": [
+        {
+          "id": 1,
+          "bloque": "PETROECUADOR",
+          "fecha_caducidad": "2024-12-31"
+        }
+      ],
+      "certifications": [
+        {
+          "id": 1,
+          "name": "INSPECCION VOLUMETRICA",
+          "name_display": "Inspección Volumétrica",
+          "date_start": "2024-01-01",
+          "date_end": "2025-01-01",
+          "description": "Annual inspection"
+        }
+      ],
+      "created_at": "2023-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_active": true
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Vehicle Model Fields
+
+Vehicles in Mantis support the following data fields:
+
+### Basic Information
+- `brand` - Vehicle brand/manufacturer
+- `model` - Vehicle model
+- `type_vehicle` - Type (CAMION, VACUUM, CAMIONETA, PLATAFORMA, AUTO)
+- `year` - Manufacturing year
+- `no_plate` - License plate (unique identifier)
+- `chasis` - Chassis information
+- `color` - Vehicle color
+- `owner_transport` - Owner name (default: "PEISOL")
+
+### Status Fields
+- `status_vehicle` - Operational status (DISPONIBLE, EN MANTENIMIENTO, STANBY)
+- `status_cert_oper` - Certification status (VIGENTE, VENCIDO, NO APLICA, POR VENCER, EN TRAMITE, RECHAZADO)
+
+### Certification Dates
+- `date_cert_oper` - Operation certificate issue date
+- `due_date_cert_oper` - Operation certificate expiration date
+- `date_matricula` - Registration date
+- `due_date_matricula` - Registration expiration date
+- `date_mtop` - MTOP certification date
+- `due_date_mtop` - MTOP expiration date
+- `date_technical_review` - Technical review date
+- `due_date_technical_review` - Technical review expiration date
+- `date_satellite` - Satellite system installation date
+- `due_date_satellite` - Satellite system expiration date
+
+### Insurance Information
+- `nro_poliza` - Insurance policy number
+- `insurance_company` - Insurance provider name
+- `insurance_expiration_date` - Policy expiration date
+- `insurance_issue_date` - Policy issue date
+
+### Identification Numbers
+- `serial_number` - Vehicle serial number
+- `engine_number` - Engine identification number
+- `chassis_number` - Chassis identification number
+
+### File Attachments
+- `vehicle_image` - Vehicle photo (image file)
+- `poliza_file` - Insurance policy document (PDF)
+- `matricula_file` - Registration document (PDF)
+- `rev_tec_file` - Technical review document (PDF)
+
+## Error Responses
+
+All endpoints may return the following error responses:
+
+<ResponseExample>
+```json 400 Bad Request
+{
+  "success": false,
+  "error": "El campo vehicle_id es requerido"
+}
+```
+
+```json 404 Not Found
+{
+  "success": false,
+  "error": "Vehículo no encontrado"
+}
+```
+
+```json 500 Internal Server Error
+{
+  "success": false,
+  "error": "Error interno: [error details]"
+}
+```
+</ResponseExample>

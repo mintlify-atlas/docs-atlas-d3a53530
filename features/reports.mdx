@@ -1,0 +1,567 @@
+---
+title: Reports & PDF Generation
+description: Generate PDFs, merge documents, and create compliance reports
+icon: file-pdf
+---
+
+## Overview
+
+Mantis includes a comprehensive reporting system that generates professional PDF documents for clients, regulatory compliance, and internal operations. The system uses Playwright for HTML-to-PDF conversion and supports document merging for complete billing packages.
+
+## PDF Generation Technology
+
+### Playwright-Based Rendering
+
+The system uses Playwright (Chromium) to convert HTML templates to PDFs:
+
+```python
+from playwright.sync_api import sync_playwright
+
+def render_pdf_to_bytes(url, cookies=None):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(ignore_https_errors=True)
+        
+        if cookies:
+            context.add_cookies(cookies)
+        
+        page = context.new_page()
+        page.goto(url)
+        page.wait_for_load_state("networkidle")
+        
+        pdf_bytes = page.pdf(
+            format="A4",
+            margin={"top": "0.5cm", "right": "0.5cm", 
+                    "bottom": "0.5cm", "left": "0.5cm"},
+            print_background=True
+        )
+        browser.close()
+        return pdf_bytes
+```
+
+<Note>
+  Playwright provides superior rendering compared to WeasyPrint, with full CSS support, JavaScript execution, and modern browser features.
+</Note>
+
+## Report Categories
+
+### Project Reports
+
+<CardGroup cols={2}>
+  <Card title="Work Sheet" icon="file-invoice">
+    **Template**: `WorkSheetTemplateView`
+    
+    **PDF**: `PDFWorkSheet`
+    
+    **URL**: `/reports/worksheet/{id}/`
+    
+    Itemized billing document with rental charges, maintenance services, and waste disposal
+  </Card>
+  <Card title="Final Disposition Certificate" icon="certificate">
+    **Template**: `FinalDispositionCertificateView`
+    
+    **PDF**: `PDFFinalDispositionCertificateView`
+    
+    **URL**: `/reports/final-disposition/{id}/`
+    
+    Environmental compliance certificate for waste disposal
+  </Card>
+  <Card title="Custody Chain" icon="link">
+    **Template**: `CustodyChainReportView`
+    
+    **PDF**: `PDFCustodyChain`
+    
+    **URL**: `/reports/custody-chain/{id}/`
+    
+    Waste collection documentation with signatures
+  </Card>
+  <Card title="Shipping Guide" icon="truck">
+    **Template**: `ShippingGuideReportView`
+    
+    **PDF**: `PDFShippingGuideView`
+    
+    **URL**: `/reports/shipping-guide/{id}/`
+    
+    Transportation and logistics documentation
+  </Card>
+</CardGroup>
+
+### Maintenance Reports
+
+<Card title="Maintenance Sheet" icon="wrench">
+  **Template**: `SheetMaintenanceReportView`
+  
+  **PDF**: `PDFSheetMaintenance`
+  
+  **URL**: `/reports/sheet-maintenance/{id}/`
+  
+  Technical documentation of maintenance work performed, parts replaced, and recommendations
+</Card>
+
+### Equipment Reports
+
+<Accordion title="Equipment Checklists">
+  Generate inspection checklists for different equipment types:
+  
+  | Equipment Type | Template | PDF URL |
+  |---------------|----------|----------|
+  | Bathrooms (Baterías) | `EquipmentBateriesCheckList` | `/reports/equipment-bateries/{id}/` |
+  | Handwashing Stations | `EquipmentWasherHandsCheck` | `/reports/equipment-washer-hands/{id}/` |
+  | Urinal Stations | `EquipmentUrinalStationCheck` | `/reports/equipment-urinal-station/{id}/` |
+  | Bathroom Campers | `EquipmentBathroomCamperChecker` | `/reports/equipment-bathroom-camper/{id}/` |
+  | Raw Water Tanks | `EquipmentRawWaterStorageTanks` | `/reports/equipment-raw-water-tanks/{id}/` |
+  | Wastewater Tanks | `EquipmentWastewaterStorageTanks` | `/reports/equipment-wastewater-tanks/{id}/` |
+</Accordion>
+
+<Accordion title="Equipment Information">
+  **Template**: `EquipmentInfoReport`
+  
+  **PDF**: `PDFEquipmentInfoReport`
+  
+  **URL**: `/reports/equipment-info/{id}/`
+  
+  Complete technical specifications, dimensions, components, and status information
+</Accordion>
+
+### Personnel Reports
+
+<CardGroup cols={2}>
+  <Card title="Technical Information" icon="id-card">
+    **URL**: `/reports/technical/{id}/`
+    
+    Personnel record with licenses and certifications
+  </Card>
+  <Card title="Vaccination Record" icon="syringe">
+    **URL**: `/reports/technical-vaccine/{id}/`
+    
+    COVID-19 and required vaccinations for field work
+  </Card>
+</CardGroup>
+
+### Vehicle Reports
+
+<Card title="Vehicle Status" icon="car">
+  **Template**: `VehicleStatusReport`
+  
+  **PDF**: `PDFVehicleStatusReport`
+  
+  **URL**: `/reports/vehicle-status/{pk}/`
+  
+  Complete vehicle documentation including certifications, insurance, and technical review status
+</Card>
+
+### Status Reports
+
+<CardGroup cols={3}>
+  <Card title="Equipment by Status" icon="toolbox">
+    **URL**: `/reports/equipment-status/`
+    
+    All equipment grouped by availability
+  </Card>
+  <Card title="Vehicles by Status" icon="car">
+    **URL**: `/reports/vehicles-status/`
+    
+    All vehicles with certification status
+  </Card>
+  <Card title="Technicals by Status" icon="users">
+    **URL**: `/reports/technicals-status/`
+    
+    Personnel availability and qualifications
+  </Card>
+</CardGroup>
+
+### Billing Reports
+
+<AccordionGroup>
+  <Accordion title="Liquidated Sheets">
+    **URL**: `/reports/liquidated-sheets/`
+    
+    All work orders ready for invoicing (status='LIQUIDATED')
+  </Accordion>
+  
+  <Accordion title="Custody Chains Report">
+    **URL**: `/reports/custody-chains/`
+    
+    All custody chains with filter options
+  </Accordion>
+  
+  <Accordion title="Custody Chains Filtered">
+    **URL**: `/reports/custody-chains-filtered/`
+    
+    Custody chains filtered by date range and project
+  </Accordion>
+  
+  <Accordion title="Shipping Guides Report">
+    **URL**: `/reports/shipping-guides/`
+    
+    All shipping guides for logistics tracking
+  </Accordion>
+  
+  <Accordion title="Maintenance Sheets Report">
+    **URL**: `/reports/maintenance-sheets/`
+    
+    All maintenance operations with cost summary
+  </Accordion>
+</AccordionGroup>
+
+## Document Merging
+
+### SheetMergeGenerated API
+
+The system can merge multiple PDFs into a single billing package:
+
+```python
+GET /api/load_files/sheet/{sheet_id}/merge-generated/
+```
+
+**Document Order:**
+
+<Steps>
+  <Step title="Work Sheet (Planilla)">
+    Generated: Itemized billing with all charges
+    
+    Format: Landscape A4
+  </Step>
+  <Step title="Final Disposition Certificate">
+    Generated: Waste disposal compliance certificate
+    
+    Format: Portrait A4
+  </Step>
+  <Step title="Invoice (Factura)">
+    Attached: Client invoice PDF from accounting system
+  </Step>
+  <Step title="Custody Chains">
+    Generated: All custody chains for the billing period, sorted by date
+  </Step>
+</Steps>
+
+### Merge Implementation
+
+```python
+from pypdf import PdfWriter, PdfReader
+import io
+
+def merge_documents(sheet_id):
+    writer = PdfWriter()
+    
+    # 1. Add work sheet (landscape)
+    url = f"{settings.BASE_URL}/reports/worksheet/{sheet_id}/"
+    pdf_bytes = render_url_to_pdf(page, url, landscape=True)
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    for page in reader.pages:
+        writer.add_page(page)
+    
+    # 2. Add final disposition certificate (portrait)
+    url = f"{settings.BASE_URL}/reports/final-disposition/{sheet_id}/"
+    pdf_bytes = render_url_to_pdf(page, url, landscape=False)
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    for page in reader.pages:
+        writer.add_page(page)
+    
+    # 3. Add invoice file if exists
+    if sheet.invoice_file:
+        reader = PdfReader(sheet.invoice_file.path)
+        for page in reader.pages:
+            writer.add_page(page)
+    
+    # 4. Add all custody chains
+    chains = CustodyChain.objects.filter(
+        sheet_project=sheet,
+        is_active=True
+    ).order_by('activity_date', 'consecutive')
+    
+    for chain in chains:
+        url = f"{settings.BASE_URL}/reports/custody-chain/{chain.id}/"
+        pdf_bytes = render_url_to_pdf(page, url)
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        for page in reader.pages:
+            writer.add_page(page)
+    
+    # Write to buffer
+    buffer = io.BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
+```
+
+<Warning>
+  Document merging uses ThreadPoolExecutor to avoid conflicts with Django's async event loop. Always run Playwright operations in a separate thread.
+</Warning>
+
+## Code Examples
+
+### Generating a Single PDF
+
+```python
+from django.http import HttpResponse
+from django.urls import reverse
+from playwright.sync_api import sync_playwright
+import django.conf.settings as settings
+
+def generate_custody_chain_pdf(request, id_custody_chain):
+    # Build template URL
+    template_path = reverse(
+        'custody-chain-report',
+        kwargs={'id_custody_chain': id_custody_chain}
+    )
+    target_url = f"{settings.BASE_URL}{template_path}"
+    
+    # Extract cookies for authentication
+    cookies = [
+        {
+            'name': name,
+            'value': value,
+            'domain': settings.BASE_URL.split('://')[1].split(':')[0],
+            'path': '/'
+        }
+        for name, value in request.COOKIES.items()
+    ]
+    
+    # Generate PDF
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(ignore_https_errors=True)
+        context.add_cookies(cookies)
+        page = context.new_page()
+        page.goto(target_url)
+        page.wait_for_load_state('networkidle')
+        
+        pdf_bytes = page.pdf(
+            format='A4',
+            margin={'top': '0.5cm', 'right': '0.5cm',
+                    'bottom': '0.5cm', 'left': '0.5cm'},
+            print_background=True
+        )
+        browser.close()
+    
+    # Return as download
+    filename = f'CadenaCustodia-{id_custody_chain}.pdf'
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+```
+
+### Custom Page Orientation
+
+```python
+# Portrait (default)
+pdf_bytes = page.pdf(
+    format='A4',
+    landscape=False,
+    margin={'top': '1cm', 'right': '1cm', 'bottom': '1cm', 'left': '1cm'}
+)
+
+# Landscape (for wide tables)
+pdf_bytes = page.pdf(
+    format='A4',
+    landscape=True,
+    margin={'top': '0.5cm', 'right': '0.5cm', 'bottom': '0.5cm', 'left': '0.5cm'}
+)
+```
+
+### Adding Watermarks or Headers
+
+```python
+# In your Django template
+@media print {
+    @page {
+        margin-top: 2cm;
+        
+        @top-center {
+            content: "CONFIDENTIAL - PEISOL";
+            font-size: 10pt;
+            color: #999;
+        }
+    }
+}
+```
+
+## Report Template Guidelines
+
+### HTML Template Structure
+
+```html
+<!-- reports/templates/custody_chain.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Cadena de Custodia {{ chain.consecutive }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 5px;
+        }
+        .signature-box {
+            border: 1px solid #000;
+            height: 60px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CADENA DE CUSTODIA N° {{ chain.consecutive }}</h1>
+    <p>Fecha: {{ chain.activity_date|date:"d/m/Y" }}</p>
+    
+    <!-- Report content -->
+    
+    <div class="signature-box">
+        <p>{{ chain.contact_name }}</p>
+        <p>{{ chain.contact_position }}</p>
+    </div>
+</body>
+</html>
+```
+
+### CSS for Print
+
+```css
+/* Optimize for PDF rendering */
+@media print {
+    /* Avoid page breaks inside elements */
+    table, figure, img {
+        page-break-inside: avoid;
+    }
+    
+    /* Force page breaks */
+    .page-break {
+        page-break-after: always;
+    }
+    
+    /* Hide elements not needed in print */
+    .no-print {
+        display: none;
+    }
+}
+
+/* Table styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    text-align: left;
+}
+
+td, th {
+    border: 1px solid #000;
+    padding: 5px;
+}
+```
+
+## Performance Optimization
+
+<AccordionGroup>
+  <Accordion title="Concurrent Generation">
+    Use ThreadPoolExecutor for generating multiple PDFs:
+    
+    ```python
+    from concurrent.futures import ThreadPoolExecutor
+    
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = []
+        for chain_id in chain_ids:
+            future = executor.submit(generate_pdf, chain_id)
+            futures.append(future)
+        
+        results = [f.result() for f in futures]
+    ```
+  </Accordion>
+  
+  <Accordion title="Caching Templates">
+    Cache rendered HTML before PDF conversion:
+    
+    ```python
+    from django.core.cache import cache
+    
+    cache_key = f'report_html_{report_id}'
+    html = cache.get(cache_key)
+    
+    if not html:
+        html = render_to_string('report.html', context)
+        cache.set(cache_key, html, timeout=300)
+    ```
+  </Accordion>
+  
+  <Accordion title="Browser Reuse">
+    Reuse browser context for multiple pages:
+    
+    ```python
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        
+        for url in urls:
+            page = context.new_page()
+            page.goto(url)
+            pdf = page.pdf()
+            page.close()
+        
+        browser.close()
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Template Design">
+    - Use semantic HTML for better PDF structure
+    - Keep file sizes small (compress images)
+    - Use web-safe fonts (Arial, Times New Roman)
+    - Test print CSS with browser print preview
+    - Avoid complex CSS animations or transitions
+  </Accordion>
+  
+  <Accordion title="Authentication">
+    - Pass request cookies to Playwright context
+    - Use session authentication for template access
+    - Validate permissions before PDF generation
+    - Log all PDF generation requests for audit
+  </Accordion>
+  
+  <Accordion title="Error Handling">
+    - Wrap PDF generation in try-except blocks
+    - Return meaningful error messages
+    - Log Playwright errors with context
+    - Provide fallback for failed renders
+  </Accordion>
+  
+  <Accordion title="File Management">
+    - Generate PDFs to memory (BytesIO) when possible
+    - Clean up temporary files after merge
+    - Use descriptive filenames with dates
+    - Store generated PDFs in database FileFields
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Work Orders" icon="clipboard-list" href="/features/work-orders">
+    Generate work sheet PDFs for client billing
+  </Card>
+  <Card title="Custody Chains" icon="link" href="/features/custody-chains">
+    Create custody chain compliance PDFs
+  </Card>
+  <Card title="Maintenance" icon="wrench" href="/features/maintenance">
+    Generate maintenance sheet documentation
+  </Card>
+  <Card title="Equipment" icon="toolbox" href="/features/equipment">
+    Create equipment checklists and specs
+  </Card>
+</CardGroup>

@@ -1,0 +1,447 @@
+---
+title: Maintenance sheet API
+description: Track maintenance operations and preventive/corrective work
+---
+
+Maintenance sheets document work performed on equipment, including preventive maintenance and corrective repairs. They track costs, parts used, and technical observations.
+
+## Endpoints
+
+### Create maintenance sheet
+
+```bash
+POST /api/maintenance/sheets/
+```
+
+Creates a new maintenance sheet for documenting equipment maintenance work.
+
+<ParamField body="project_id" type="integer" required>
+  Project associated with the maintenance
+</ParamField>
+
+<ParamField body="resource_item_id" type="integer" required>
+  Equipment/resource being maintained
+</ParamField>
+
+<ParamField body="date" type="string" required>
+  Date of maintenance work (YYYY-MM-DD format)
+</ParamField>
+
+<ParamField body="type_maintenance" type="string" required>
+  Type of maintenance. Options:
+  - `PREVENTIVO` - Preventive maintenance
+  - `CORRECTIVO` - Corrective/repair maintenance
+</ParamField>
+
+<ParamField body="fault_description" type="text">
+  Description of the fault or issue (required for CORRECTIVO)
+</ParamField>
+
+<ParamField body="fault_causes" type="text">
+  Analysis of fault causes
+</ParamField>
+
+<ParamField body="parts_used" type="text">
+  List of parts and materials used
+</ParamField>
+
+<ParamField body="work_performed" type="text">
+  Detailed description of work performed
+</ParamField>
+
+<ParamField body="observations" type="text">
+  Additional notes and recommendations
+</ParamField>
+
+<ParamField body="daily_rate" type="decimal">
+  Daily labor rate
+</ParamField>
+
+<ParamField body="logistics_cost" type="decimal">
+  Transportation and logistics costs
+</ParamField>
+
+<ParamField body="total_cost" type="decimal">
+  Total maintenance cost
+</ParamField>
+
+<ParamField body="technician_name" type="string">
+  Name of technician performing work
+</ParamField>
+
+<ParamField body="supervisor_name" type="string">
+  Name of supervisor approving work
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Maintenance sheet created successfully",
+  "data": {
+    "id": 15,
+    "sheet_number": "MNT-2025-0015",
+    "project_id": 5,
+    "resource_item": {
+      "id": 12,
+      "code": "BS-001",
+      "name": "BATERIA SANITARIA HOMBRE"
+    },
+    "date": "2025-03-01",
+    "type_maintenance": "PREVENTIVO",
+    "total_cost": "150.00",
+    "status": "IN_PROGRESS"
+  }
+}
+```
+</ResponseExample>
+
+### Get maintenance sheet
+
+```bash
+GET /api/maintenance/sheets/{sheet_id}/
+```
+
+Retrieves complete details of a maintenance sheet.
+
+<ParamField path="sheet_id" type="integer" required>
+  Maintenance sheet ID
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "id": 15,
+    "sheet_number": "MNT-2025-0015",
+    "project": {
+      "id": 5,
+      "partner_name": "PETROECUADOR",
+      "location": "Camp Site A"
+    },
+    "resource_item": {
+      "id": 12,
+      "code": "BS-001",
+      "name": "BATERIA SANITARIA HOMBRE",
+      "type_equipment": "BTSNHM"
+    },
+    "date": "2025-03-01",
+    "type_maintenance": "PREVENTIVO",
+    "fault_description": null,
+    "fault_causes": null,
+    "parts_used": "Cleaning supplies, lubricants",
+    "work_performed": "Routine inspection and cleaning of all components",
+    "observations": "Equipment in good condition",
+    "daily_rate": "100.00",
+    "logistics_cost": "50.00",
+    "total_cost": "150.00",
+    "technician_name": "Juan Pérez",
+    "supervisor_name": "María López",
+    "status": "COMPLETED",
+    "approved_by": "María López",
+    "approved_at": "2025-03-01T18:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Update maintenance sheet
+
+```bash
+PUT /api/maintenance/sheets/
+```
+
+Updates an existing maintenance sheet.
+
+<ParamField body="id" type="integer" required>
+  Maintenance sheet ID to update
+</ParamField>
+
+<ParamField body="date" type="string">
+  Updated date
+</ParamField>
+
+<ParamField body="fault_description" type="text">
+  Updated fault description
+</ParamField>
+
+<ParamField body="work_performed" type="text">
+  Updated work description
+</ParamField>
+
+<ParamField body="total_cost" type="decimal">
+  Updated total cost
+</ParamField>
+
+<ParamField body="status" type="string">
+  Updated status: `IN_PROGRESS`, `COMPLETED`, `APPROVED`
+</ParamField>
+
+<Note>
+Only provide fields that need to be updated. Other fields remain unchanged.
+</Note>
+
+### Delete maintenance sheet
+
+```bash
+DELETE /api/maintenance/sheets/{pk}/delete/
+```
+
+Soft deletes a maintenance sheet (marks as inactive).
+
+<ParamField path="pk" type="integer" required>
+  Maintenance sheet ID to delete
+</ParamField>
+
+<Warning>
+Deleted maintenance sheets can be restored by setting is_deleted=False through the admin interface.
+</Warning>
+
+## Maintenance sheet model
+
+<ResponseField name="id" type="integer">
+  Unique identifier
+</ResponseField>
+
+<ResponseField name="sheet_number" type="string">
+  Auto-generated sheet number (format: MNT-YYYY-NNNN)
+</ResponseField>
+
+<ResponseField name="project" type="object">
+  Associated project
+</ResponseField>
+
+<ResponseField name="resource_item" type="object">
+  Equipment being maintained
+</ResponseField>
+
+<ResponseField name="date" type="string">
+  Date of maintenance work
+</ResponseField>
+
+<ResponseField name="type_maintenance" type="string">
+  Maintenance type: `PREVENTIVO` or `CORRECTIVO`
+</ResponseField>
+
+<ResponseField name="fault_description" type="text">
+  Description of fault or issue (required for corrective maintenance)
+</ResponseField>
+
+<ResponseField name="fault_causes" type="text">
+  Analysis of what caused the fault
+</ResponseField>
+
+<ResponseField name="parts_used" type="text">
+  List of replacement parts and materials used
+</ResponseField>
+
+<ResponseField name="work_performed" type="text">
+  Detailed description of maintenance work performed
+</ResponseField>
+
+<ResponseField name="observations" type="text">
+  Additional notes, recommendations, or follow-up actions
+</ResponseField>
+
+<ResponseField name="daily_rate" type="decimal">
+  Daily labor rate charged
+</ResponseField>
+
+<ResponseField name="logistics_cost" type="decimal">
+  Transportation and logistics expenses
+</ResponseField>
+
+<ResponseField name="total_cost" type="decimal">
+  Total cost of maintenance
+</ResponseField>
+
+<ResponseField name="technician_name" type="string">
+  Name of technician who performed the work
+</ResponseField>
+
+<ResponseField name="supervisor_name" type="string">
+  Name of supervisor who reviewed the work
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status: `IN_PROGRESS`, `COMPLETED`, `APPROVED`
+</ResponseField>
+
+<ResponseField name="approved_by" type="string">
+  Name of person who approved the sheet
+</ResponseField>
+
+<ResponseField name="approved_at" type="datetime">
+  Timestamp of approval
+</ResponseField>
+
+<ResponseField name="is_deleted" type="boolean">
+  Soft delete flag
+</ResponseField>
+
+## Maintenance types
+
+<CardGroup cols={2}>
+  <Card title="Preventivo" icon="calendar-check">
+    Scheduled maintenance to prevent failures:
+    - Routine inspections
+    - Cleaning and lubrication
+    - Component replacement before failure
+    - System calibration
+  </Card>
+  <Card title="Correctivo" icon="wrench">
+    Repairs to fix identified problems:
+    - Emergency repairs
+    - Component replacement after failure
+    - System restoration
+    - Problem diagnostics
+  </Card>
+</CardGroup>
+
+## Workflow example
+
+<Steps>
+  <Step title="Create maintenance sheet">
+    Create a sheet for preventive maintenance:
+    
+    ```bash
+    curl -X POST https://mantis.peisol.com.ec/api/maintenance/sheets/ \
+      -H "Content-Type: application/json" \
+      -d '{
+        "project_id": 5,
+        "resource_item_id": 12,
+        "date": "2025-03-01",
+        "type_maintenance": "PREVENTIVO",
+        "work_performed": "Routine inspection and cleaning",
+        "parts_used": "Cleaning supplies, lubricants",
+        "daily_rate": 100.00,
+        "logistics_cost": 50.00,
+        "total_cost": 150.00,
+        "technician_name": "Juan Pérez"
+      }'
+    ```
+  </Step>
+  
+  <Step title="Document the work">
+    For corrective maintenance, include fault details:
+    
+    ```bash
+    curl -X POST https://mantis.peisol.com.ec/api/maintenance/sheets/ \
+      -H "Content-Type: application/json" \
+      -d '{
+        "project_id": 5,
+        "resource_item_id": 12,
+        "date": "2025-03-02",
+        "type_maintenance": "CORRECTIVO",
+        "fault_description": "Pump not operating, no pressure output",
+        "fault_causes": "Worn impeller, damaged seals",
+        "parts_used": "New impeller (P/N 12345), Seal kit (P/N 67890)",
+        "work_performed": "Replaced pump impeller and seals, tested operation",
+        "observations": "Pump now operating at normal pressure. Recommend monitoring",
+        "total_cost": 450.00,
+        "technician_name": "Juan Pérez"
+      }'
+    ```
+  </Step>
+  
+  <Step title="Complete and approve">
+    Update status when work is completed:
+    
+    ```bash
+    curl -X PUT https://mantis.peisol.com.ec/api/maintenance/sheets/ \
+      -H "Content-Type: application/json" \
+      -d '{
+        "id": 15,
+        "status": "COMPLETED"
+      }'
+    ```
+    
+    Supervisor approves the work:
+    
+    ```bash
+    curl -X PUT https://mantis.peisol.com.ec/api/maintenance/sheets/ \
+      -H "Content-Type: application/json" \
+      -d '{
+        "id": 15,
+        "status": "APPROVED",
+        "supervisor_name": "María López"
+      }'
+    ```
+  </Step>
+</Steps>
+
+## Best practices
+
+<AccordionGroup>
+  <Accordion title="Preventive vs. corrective">
+    **Preventive maintenance**:
+    - Schedule based on equipment frequency settings
+    - Focus on preventing failures
+    - Document routine procedures
+    - Track patterns over time
+    
+    **Corrective maintenance**:
+    - Always document the fault clearly
+    - Include root cause analysis
+    - Detail all parts replaced
+    - Note if emergency service was required
+  </Accordion>
+  
+  <Accordion title="Sheet numbering">
+    Maintenance sheet numbers are auto-generated in the format `MNT-YYYY-NNNN`:
+    - MNT: Maintenance prefix
+    - YYYY: Current year
+    - NNNN: Sequential number
+  </Accordion>
+  
+  <Accordion title="Cost tracking">
+    Break down costs clearly:
+    - **daily_rate**: Labor costs (technician time)
+    - **logistics_cost**: Transportation, fuel, travel expenses
+    - **total_cost**: Labor + logistics + parts
+    
+    Include parts costs in the total_cost field.
+  </Accordion>
+  
+  <Accordion title="Documentation quality">
+    Good maintenance documentation should:
+    - Be detailed enough for another technician to understand
+    - Include specific part numbers when components are replaced
+    - Note any deviations from standard procedures
+    - Provide recommendations for future maintenance
+  </Accordion>
+  
+  <Accordion title="Status workflow">
+    Follow this progression:
+    1. **IN_PROGRESS**: Work is being performed
+    2. **COMPLETED**: Work is done, awaiting approval
+    3. **APPROVED**: Work has been reviewed and approved
+    
+    Approval should be done by a supervisor or project manager.
+  </Accordion>
+</AccordionGroup>
+
+## Integration with scheduling
+
+Maintenance sheets are often created based on scheduled maintenance from the calendar system. The calendar tracks:
+
+- **Frequency types**: DAY (interval), WEEK (specific weekdays), MONTH (specific dates)
+- **Next maintenance due**: Calculated based on last maintenance and frequency
+- **Automatic reminders**: When maintenance is overdue
+
+See the [Calendar scheduling guide](/guides/calendar-scheduling) for more details.
+
+## Related endpoints
+
+<CardGroup cols={2}>
+  <Card title="Calendar events" icon="calendar" href="/api/calendar/events">
+    Schedule maintenance operations
+  </Card>
+  <Card title="Project resources" icon="boxes-stacked" href="/api/projects/resources">
+    View equipment maintenance settings
+  </Card>
+  <Card title="Equipment" icon="warehouse" href="/api/equipment/resources">
+    Update equipment status after maintenance
+  </Card>
+</CardGroup>

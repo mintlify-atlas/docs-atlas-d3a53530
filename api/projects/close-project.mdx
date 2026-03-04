@@ -1,0 +1,484 @@
+---
+title: 'Close Project'
+description: 'Validate and close projects, releasing all active resources'
+---
+
+## Overview
+
+The Close Project API allows you to validate whether a project can be closed and execute the closure process. When a project is closed, all active equipment is released back to available inventory, associated services are retired, and the project is marked as closed.
+
+## Endpoints
+
+### Validate Project Closure
+
+Check if a project can be closed and get a list of any issues that need to be resolved.
+
+```http
+GET /api/projects/<project_id>/close/
+```
+
+#### Path Parameters
+
+<ParamField path="project_id" type="integer" required>
+  ID of the project to validate
+</ParamField>
+
+#### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the validation request was successful
+</ResponseField>
+
+<ResponseField name="can_close" type="boolean">
+  Whether the project can be closed (true if no errors)
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Overall status message
+</ResponseField>
+
+<ResponseField name="alerts" type="array">
+  Array of alert objects with validation results
+  
+  <Expandable title="Alert object">
+    <ResponseField name="type" type="string">
+      Alert severity: `error`, `warning`, or `info`
+      - `error`: Must be resolved before closing
+      - `warning`: Should be reviewed but doesn't block closure
+      - `info`: Informational message about what will happen
+    </ResponseField>
+    
+    <ResponseField name="message" type="string">
+      Description of the alert
+    </ResponseField>
+    
+    <ResponseField name="link" type="string">
+      URL to the related resource (optional)
+    </ResponseField>
+    
+    <ResponseField name="link_text" type="string">
+      Display text for the link (optional)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Example Request
+
+```bash
+curl -X GET "https://api.mantis.example/api/projects/1/close/" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+#### Example Response - Can Close
+
+```json
+{
+  "success": true,
+  "can_close": true,
+  "message": "El proyecto puede cerrarse.",
+  "alerts": [
+    {
+      "type": "info",
+      "message": "Se liberarán 3 equipo(s) al cerrar el proyecto: BS-001 - Batería Sanitaria Hombre, LV-002 - Lavamanos, TQ-005 - Tanque de Agua."
+    },
+    {
+      "type": "info",
+      "message": "Se retirarán 3 servicio(s) activo(s) al cerrar el proyecto."
+    }
+  ]
+}
+```
+
+#### Example Response - Cannot Close (Errors)
+
+```json
+{
+  "success": true,
+  "can_close": false,
+  "message": "El proyecto no puede cerrarse. Revise las alertas.",
+  "alerts": [
+    {
+      "type": "error",
+      "message": "La planilla #125 (WS-2025-0045) está en ejecución. Debe liquidarla o cancelarla antes de cerrar el proyecto.",
+      "link": "#/work-sheet/form/125",
+      "link_text": "Ir a planilla WS-2025-0045"
+    },
+    {
+      "type": "warning",
+      "message": "La planilla #122 (WS-2025-0042) no está cerrada (Estado: Liquidada).",
+      "link": "#/work-sheet/form/122",
+      "link_text": "Ir a planilla WS-2025-0042"
+    },
+    {
+      "type": "info",
+      "message": "Se liberarán 3 equipo(s) al cerrar el proyecto: BS-001 - Batería Sanitaria Hombre, LV-002 - Lavamanos, TQ-005 - Tanque de Agua."
+    }
+  ]
+}
+```
+
+#### Example Response - Already Closed
+
+```json
+{
+  "success": false,
+  "can_close": false,
+  "message": "El proyecto ya se encuentra cerrado.",
+  "alerts": []
+}
+```
+
+---
+
+### Close Project
+
+Execute the project closure process, releasing all resources and marking the project as closed.
+
+```http
+POST /api/projects/<project_id>/close/
+```
+
+#### Path Parameters
+
+<ParamField path="project_id" type="integer" required>
+  ID of the project to close
+</ParamField>
+
+#### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the closure was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Success or error message
+</ResponseField>
+
+<ResponseField name="released_equipment" type="array">
+  List of equipment that was released
+  
+  <Expandable title="Equipment object">
+    <ResponseField name="id" type="integer">
+      ProjectResourceItem ID
+    </ResponseField>
+    
+    <ResponseField name="code" type="string">
+      Equipment code
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Equipment name
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="released_equipment_count" type="integer">
+  Number of equipment items released
+</ResponseField>
+
+<ResponseField name="alerts" type="array">
+  Validation alerts from the closure process
+</ResponseField>
+
+#### Example Request
+
+```bash
+curl -X POST "https://api.mantis.example/api/projects/1/close/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+#### Example Response - Success
+
+```json
+{
+  "success": true,
+  "message": "Proyecto cerrado exitosamente.",
+  "released_equipment": [
+    {
+      "id": 10,
+      "code": "BS-001",
+      "name": "Batería Sanitaria Hombre"
+    },
+    {
+      "id": 11,
+      "code": "LV-002",
+      "name": "Lavamanos"
+    },
+    {
+      "id": 15,
+      "code": "TQ-005",
+      "name": "Tanque de Agua"
+    }
+  ],
+  "released_equipment_count": 3,
+  "alerts": [
+    {
+      "type": "info",
+      "message": "Se liberarán 3 equipo(s) al cerrar el proyecto: BS-001 - Batería Sanitaria Hombre, LV-002 - Lavamanos, TQ-005 - Tanque de Agua."
+    },
+    {
+      "type": "info",
+      "message": "Se retirarán 3 servicio(s) activo(s) al cerrar el proyecto."
+    }
+  ]
+}
+```
+
+#### Example Response - Validation Error
+
+```json
+{
+  "success": false,
+  "can_close": false,
+  "message": "No se puede cerrar el proyecto. Revise las alertas.",
+  "alerts": [
+    {
+      "type": "error",
+      "message": "La planilla #125 (WS-2025-0045) está en ejecución. Debe liquidarla o cancelarla antes de cerrar el proyecto.",
+      "link": "#/work-sheet/form/125",
+      "link_text": "Ir a planilla WS-2025-0045"
+    }
+  ]
+}
+```
+
+---
+
+## What Happens When a Project Closes
+
+When you close a project, the system performs the following actions automatically:
+
+### 1. Equipment Release
+
+All active equipment (`type_resource="EQUIPO"`) that is not already retired is released:
+
+- **ProjectResourceItem** changes:
+  - `is_retired` → `True`
+  - `retirement_date` → Current date
+  - `retirement_reason` → "Cierre de proyecto #{project_id}"
+
+- **ResourceItem** (physical equipment) changes:
+  - `stst_status_disponibility` → `"DISPONIBLE"`
+  - `stst_current_location` → `None`
+  - `stst_current_project_id` → `None`
+  - `stst_commitment_date` → `None`
+  - `stst_release_date` → `None`
+
+### 2. Service Retirement
+
+All services linked to equipment are retired:
+
+- Services linked via `physical_equipment_code` are retired
+- Standalone services (not linked to equipment) are also retired
+- **ProjectResourceItem** changes:
+  - `is_retired` → `True`
+  - `retirement_date` → Current date
+  - `retirement_reason` → "Cierre de proyecto #{project_id}"
+
+### 3. Project Closure
+
+The project itself is marked as closed:
+
+- **Project** changes:
+  - `is_closed` → `True`
+  - `end_date` → Set to current date if not already set
+
+<Warning>
+  **Irreversible Action**: Closing a project cannot be undone through the API. Equipment can be manually reassigned to new projects, but the closure state of the original project remains.
+</Warning>
+
+---
+
+## Validation Rules
+
+The following validations are performed before a project can be closed:
+
+### Error-Level Validations (Must Pass)
+
+<ResponseField name="Work Sheets in Progress" type="error">
+  **Condition**: Any work sheet (planilla) with `status="IN_PROGRESS"`
+  
+  **Resolution**: Liquidate or cancel all in-progress work sheets before closing the project.
+  
+  **Example**: "La planilla #125 (WS-2025-0045) está en ejecución. Debe liquidarla o cancelarla antes de cerrar el proyecto."
+</ResponseField>
+
+### Warning-Level Validations (Recommended)
+
+<ResponseField name="Open Work Sheets" type="warning">
+  **Condition**: Work sheets that are liquidated but not closed (`is_closed=False`, `status≠CANCELLED`)
+  
+  **Resolution**: Review and close all work sheets. This doesn't block closure but should be addressed.
+  
+  **Example**: "La planilla #122 (WS-2025-0042) no está cerrada (Estado: Liquidada)."
+</ResponseField>
+
+### Informational Messages
+
+<ResponseField name="Active Equipment" type="info">
+  Lists all equipment that will be released when the project closes.
+  
+  **Example**: "Se liberarán 3 equipo(s) al cerrar el proyecto: BS-001 - Batería Sanitaria Hombre, LV-002 - Lavamanos, TQ-005 - Tanque de Agua."
+</ResponseField>
+
+<ResponseField name="Active Services" type="info">
+  Indicates how many service entries will be retired.
+  
+  **Example**: "Se retirarán 3 servicio(s) activo(s) al cerrar el proyecto."
+</ResponseField>
+
+<ResponseField name="No Issues" type="info">
+  Shown when project is ready to close with no warnings or errors.
+  
+  **Example**: "El proyecto está listo para cerrarse. No se encontraron impedimentos."
+</ResponseField>
+
+---
+
+## Error Codes
+
+<ResponseField name="200" type="OK">
+  Validation or closure completed successfully
+</ResponseField>
+
+<ResponseField name="400" type="Bad Request">
+  - Project is already closed
+  - Validation errors prevent closure (work sheets in progress)
+</ResponseField>
+
+<ResponseField name="404" type="Not Found">
+  - Project not found
+  - Project is inactive (`is_active=False`)
+  - Project is soft-deleted (`is_deleted=True`)
+</ResponseField>
+
+<ResponseField name="500" type="Internal Server Error">
+  Unexpected error during validation or closure (check server logs)
+</ResponseField>
+
+---
+
+## Workflow Example
+
+Here's a typical workflow for closing a project:
+
+### Step 1: Validate the Project
+
+```bash
+curl -X GET "https://api.mantis.example/api/projects/1/close/" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+Review the alerts and ensure there are no `error` type alerts.
+
+### Step 2: Resolve Any Errors
+
+If there are work sheets in progress:
+- Complete and liquidate them
+- Or cancel them if they're no longer needed
+
+### Step 3: Review Warnings
+
+If there are open work sheets:
+- Close them properly
+- Or document why they remain open
+
+### Step 4: Execute Closure
+
+```bash
+curl -X POST "https://api.mantis.example/api/projects/1/close/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Step 5: Verify Closure
+
+Check that:
+- Project `is_closed` is `True`
+- Equipment status is back to `DISPONIBLE`
+- All project resources are marked as `is_retired=True`
+
+---
+
+## Related Endpoints
+
+These endpoints are commonly used together with project closure:
+
+<CardGroup cols={2}>
+
+<Card title="Project Resources" icon="box" href="/api/projects/resources">
+  View all resources assigned to a project before closing
+</Card>
+
+<Card title="Work Sheets" icon="file-lines" href="/api/workorders/sheets">
+  Manage work sheets that must be completed before closure
+</Card>
+
+<Card title="Release Resources" icon="hand" href="/api/projects/resources#release-resource-from-project">
+  Manually release specific resources without closing the project
+</Card>
+
+<Card title="Equipment Availability" icon="search" href="/api/projects/resources#get-available-resources">
+  Check which equipment becomes available after closure
+</Card>
+
+</CardGroup>
+
+---
+
+## Best Practices
+
+<Card title="Validate Before Closing" icon="check-circle">
+  Always call the GET endpoint first to validate the project state and identify any issues before attempting to close.
+</Card>
+
+<Card title="Handle Work Sheets First" icon="clipboard-list">
+  Ensure all work sheets are properly liquidated and closed. This is the most common reason projects cannot be closed.
+</Card>
+
+<Card title="Review Equipment Status" icon="boxes-stacked">
+  After closure, verify that equipment has been properly released and is showing as available for new projects.
+</Card>
+
+<Card title="Document Closure Reason" icon="memo">
+  While not captured by the API, maintain external documentation of why and when projects were closed for audit purposes.
+</Card>
+
+<Card title="Preserve Historical Data" icon="clock-rotate-left">
+  The system uses soft deletion and retirement flags to preserve all historical data. Never attempt to bypass this by deleting records directly.
+</Card>
+
+<Card title="Handle Services Automatically" icon="wand-magic-sparkles">
+  Don't manually release services before closing - they're automatically handled during the closure process.
+</Card>
+
+---
+
+## Technical Notes
+
+### Transaction Safety
+
+The closure endpoint uses database transactions to ensure atomicity. If any step fails, all changes are rolled back.
+
+### Related Resources
+
+When equipment is released:
+1. The system identifies related services by matching `physical_equipment_code`
+2. Both the equipment's resource ID and its `physical_equipment_code` are checked
+3. All matching services are automatically retired
+
+### Soft Delete Pattern
+
+Mantis uses a soft delete pattern for audit trail preservation:
+- Records are marked `is_deleted=True` instead of being removed
+- Resources are marked `is_retired=True` when released
+- Project closure sets `is_closed=True`
+
+This ensures complete historical tracking of all project activities.
+
+### Date Handling
+
+- If `end_date` is not set on the project, it's automatically set to the current date during closure
+- All retirement dates use the current date at time of closure
+- Timezone handling uses Django's `timezone.now().date()` for consistency

@@ -1,0 +1,503 @@
+---
+title: 'Document Upload'
+description: 'Upload, retrieve, and delete files across multiple model types'
+---
+
+# Document Upload API
+
+Centralized API for managing file uploads across all Mantis models. Supports uploading, retrieving, and deleting PDF documents and images for technical staff, vehicles, equipment, projects, and more.
+
+## Upload or Replace File
+
+<CodeGroup>
+```bash POST /api/load_files/
+curl -X POST https://api.mantis.com/api/load_files/ \
+  -F "model_type=technical" \
+  -F "object_id=123" \
+  -F "field_name=license_file" \
+  -F "file=@/path/to/license.pdf"
+```
+
+```bash Upload Invoice (Special)
+curl -X POST https://api.mantis.com/api/load_files/ \
+  -F "model_type=sheet_project" \
+  -F "object_id=456" \
+  -F "field_name=invoice_file" \
+  -F "invoice_reference=INV-2026-001" \
+  -F "file=@/path/to/invoice.pdf"
+```
+</CodeGroup>
+
+Upload a new file or replace an existing one. If a file already exists in the field, it will be deleted and replaced with the new upload.
+
+### Form Data Parameters
+
+<ParamField body="model_type" type="string" required>
+  Type of model to upload file for. Valid options:
+  - `technical` - Technical staff member
+  - `vaccination_record` - Vaccination record
+  - `pass_technical` - Technical access pass
+  - `certification_vehicle` - Vehicle certification
+  - `pass_vehicle` - Vehicle pass
+  - `vehicle` - Vehicle
+  - `custody_chain` - Custody chain
+  - `sheet_project` - Work sheet/project
+  - `shipping_guide` - Shipping guide
+  - `resource_item` - Equipment/resource item
+</ParamField>
+
+<ParamField body="object_id" type="integer" required>
+  ID of the specific object to attach the file to
+</ParamField>
+
+<ParamField body="field_name" type="string" required>
+  Name of the file field. Valid fields depend on model_type. See [Model File Fields](#model-file-fields) below.
+</ParamField>
+
+<ParamField body="file" type="file" required>
+  The file to upload. Must be a valid PDF (for most fields) or image (for image fields).
+</ParamField>
+
+<ParamField body="invoice_reference" type="string">
+  Invoice reference number (only used when uploading invoice_file to sheet_project)
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the upload was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message about the operation
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Upload result details
+  <ResponseField name="model_type" type="string">
+    Model type that was updated
+  </ResponseField>
+  <ResponseField name="object_id" type="integer">
+    Object ID that was updated
+  </ResponseField>
+  <ResponseField name="field_name" type="string">
+    Field name that received the file
+  </ResponseField>
+  <ResponseField name="file_name" type="string">
+    Name of the uploaded file
+  </ResponseField>
+  <ResponseField name="file_url" type="string">
+    URL to access the uploaded file
+  </ResponseField>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Archivo subido correctamente al campo \"license_file\".",
+  "data": {
+    "model_type": "technical",
+    "object_id": 123,
+    "field_name": "license_file",
+    "file_name": "license.pdf",
+    "file_url": "/media/technicals/licenses/license_123.pdf"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Delete File
+
+<CodeGroup>
+```bash DELETE /api/load_files/
+curl -X DELETE "https://api.mantis.com/api/load_files/?model_type=technical&object_id=123&field_name=license_file"
+```
+</CodeGroup>
+
+Delete a file from a model instance. The file is removed from storage and the field is set to null.
+
+### Query Parameters
+
+<ParamField query="model_type" type="string" required>
+  Type of model (same as upload)
+</ParamField>
+
+<ParamField query="object_id" type="integer" required>
+  ID of the object
+</ParamField>
+
+<ParamField query="field_name" type="string" required>
+  Name of the file field to clear
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if deletion was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message about the operation
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Deletion confirmation
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Archivo eliminado del campo \"license_file\".",
+  "data": {
+    "model_type": "technical",
+    "object_id": 123,
+    "field_name": "license_file"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get File Information
+
+<CodeGroup>
+```bash GET /api/load_files/
+curl -X GET "https://api.mantis.com/api/load_files/?model_type=technical&object_id=123&field_name=license_file"
+```
+</CodeGroup>
+
+Retrieve information about a file attached to a model instance.
+
+### Query Parameters
+
+<ParamField query="model_type" type="string" required>
+  Type of model
+</ParamField>
+
+<ParamField query="object_id" type="integer" required>
+  ID of the object
+</ParamField>
+
+<ParamField query="field_name" type="string" required>
+  Name of the file field
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the query was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  File information
+  <ResponseField name="model_type" type="string">
+    Model type queried
+  </ResponseField>
+  <ResponseField name="object_id" type="integer">
+    Object ID queried
+  </ResponseField>
+  <ResponseField name="field_name" type="string">
+    Field name queried
+  </ResponseField>
+  <ResponseField name="has_file" type="boolean">
+    Whether a file exists in this field
+  </ResponseField>
+  <ResponseField name="file_name" type="string" nullable>
+    Name of the file (if exists)
+  </ResponseField>
+  <ResponseField name="file_url" type="string" nullable>
+    URL to access the file (if exists)
+  </ResponseField>
+</ResponseField>
+
+---
+
+## Get Model File Fields
+
+<CodeGroup>
+```bash GET /api/load_files/fields/
+curl -X GET "https://api.mantis.com/api/load_files/fields/?model_type=technical"
+```
+
+```bash GET (All Models)
+curl -X GET "https://api.mantis.com/api/load_files/fields/"
+```
+</CodeGroup>
+
+Retrieve the list of valid file fields for a specific model type, or all model types.
+
+### Query Parameters
+
+<ParamField query="model_type" type="string">
+  Specific model type to query (optional - omit to get all models)
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the query was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  File field information by model type
+</ResponseField>
+
+<ResponseExample>
+```json Single Model
+{
+  "success": true,
+  "data": {
+    "model_type": "technical",
+    "fields": [
+      "dni_file",
+      "license_file",
+      "vaccine_certificate_file"
+    ]
+  }
+}
+```
+
+```json All Models
+{
+  "success": true,
+  "data": {
+    "technical": ["dni_file", "license_file", "vaccine_certificate_file"],
+    "vaccination_record": ["vaccine_file"],
+    "pass_technical": ["pass_file"],
+    "vehicle": ["vehicle_image", "poliza_file", "matricula_file", "rev_tec_file"],
+    "sheet_project": ["sheet_project_file", "certificate_final_disposition_file", "invoice_file"],
+    "custody_chain": ["custody_chain_file"],
+    "shipping_guide": ["shipping_guide_file"],
+    "resource_item": ["resource_image", "resource_image_2"]
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get Document Tree
+
+<CodeGroup>
+```bash GET /api/load_files/tree/
+curl -X GET https://api.mantis.com/api/load_files/tree/
+```
+</CodeGroup>
+
+Retrieve a hierarchical tree structure of all documents in the system, organized by category (technicals, vehicles, equipment, projects).
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the query was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Hierarchical document structure
+  <ResponseField name="technicals" type="array">
+    Technical staff with their passes and vaccination records
+  </ResponseField>
+  <ResponseField name="vehicles" type="array">
+    Vehicles with their passes and certifications
+  </ResponseField>
+  <ResponseField name="equipment" type="array">
+    Equipment/resource items with images
+  </ResponseField>
+  <ResponseField name="projects" type="array">
+    Projects with sheets, custody chains, and shipping guides
+  </ResponseField>
+</ResponseField>
+
+---
+
+## Get Project Document Tree
+
+<CodeGroup>
+```bash GET /api/load_files/project/{project_id}/tree/
+curl -X GET https://api.mantis.com/api/load_files/project/789/tree/
+```
+</CodeGroup>
+
+Retrieve the document tree for a specific project, including work sheets, custody chains, and shipping guides.
+
+### Path Parameters
+
+<ParamField path="project_id" type="integer" required>
+  Project ID
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the query was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Project document structure
+  <ResponseField name="project" type="object">
+    Project information
+  </ResponseField>
+  <ResponseField name="sheets" type="array">
+    Work sheets with their files and custody chains
+  </ResponseField>
+  <ResponseField name="shipping_guides" type="array">
+    Shipping guides with their files
+  </ResponseField>
+  <ResponseField name="stats" type="object">
+    Document statistics (total files, loaded files)
+  </ResponseField>
+</ResponseField>
+
+---
+
+## Bulk Custody Chain Upload
+
+<CodeGroup>
+```bash POST /api/load_files/project/{project_id}/bulk_custody/
+curl -X POST https://api.mantis.com/api/load_files/project/789/bulk_custody/ \
+  -F "file=@/path/to/custody_chains.pdf" \
+  -F 'chain_ids=[101,102,103,104]'
+```
+</CodeGroup>
+
+Upload a multi-page PDF where each page corresponds to a specific custody chain. The PDF is automatically split and each page is assigned to the corresponding chain in order.
+
+### Path Parameters
+
+<ParamField path="project_id" type="integer" required>
+  Project ID that owns the custody chains
+</ParamField>
+
+### Form Data Parameters
+
+<ParamField body="file" type="file" required>
+  Multi-page PDF file
+</ParamField>
+
+<ParamField body="chain_ids" type="array" required>
+  JSON array of custody chain IDs in the same order as PDF pages
+</ParamField>
+
+### Validation Rules
+
+- Number of PDF pages must exactly match number of chain IDs
+- All chain IDs must belong to the specified project
+- All chains must be active (not deleted)
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Overall success status (true only if all pages processed without errors)
+</ResponseField>
+
+<ResponseField name="saved" type="integer">
+  Number of pages successfully saved
+</ResponseField>
+
+<ResponseField name="errors_count" type="integer">
+  Number of errors encountered
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable summary
+</ResponseField>
+
+<ResponseField name="details" type="array">
+  Array of successfully saved chain assignments
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  Array of errors encountered during processing
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "saved": 4,
+  "errors_count": 0,
+  "details": [
+    {
+      "chain_id": 101,
+      "consecutive": "CC-001",
+      "page": 1,
+      "filename": "CadenaCustodia_CC-001_ProjectName.pdf"
+    },
+    {
+      "chain_id": 102,
+      "consecutive": "CC-002",
+      "page": 2,
+      "filename": "CadenaCustodia_CC-002_ProjectName.pdf"
+    }
+  ],
+  "errors": [],
+  "message": "Se asignaron 4 archivo(s) correctamente."
+}
+```
+</ResponseExample>
+
+---
+
+## Model File Fields
+
+### Technical Staff
+- `dni_file` - National ID document (PDF)
+- `license_file` - Driver's license (PDF)
+- `vaccine_certificate_file` - Vaccination certificate (PDF)
+
+### Vaccination Record
+- `vaccine_file` - Individual vaccine record (PDF)
+
+### Technical Pass
+- `pass_file` - Access pass document (PDF)
+
+### Vehicle
+- `vehicle_image` - Vehicle photo (image)
+- `poliza_file` - Insurance policy (PDF)
+- `matricula_file` - Vehicle registration (PDF)
+- `rev_tec_file` - Technical inspection (PDF)
+
+### Vehicle Certification
+- `certification_file` - Certification document (PDF)
+
+### Vehicle Pass
+- `pass_file` - Access pass document (PDF)
+
+### Custody Chain
+- `custody_chain_file` - Custody chain document (PDF)
+
+### Sheet Project (Work Order)
+- `sheet_project_file` - Work sheet document (PDF)
+- `certificate_final_disposition_file` - Final disposition certificate (PDF)
+- `invoice_file` - Invoice document (PDF)
+
+### Shipping Guide
+- `shipping_guide_file` - Shipping guide document (PDF)
+
+### Resource Item (Equipment)
+- `resource_image` - Equipment photo (image)
+- `resource_image_2` - Additional equipment photo (image)
+
+---
+
+## Protected Operations
+
+Certain operations are restricted based on document status:
+
+### Closed Work Sheets
+- **Cannot modify** existing files on closed sheets
+- **Can add** files to empty fields on closed sheets
+- **Cannot delete** any files from closed sheets
+
+### Custody Chains with Closed Sheets
+- Same restrictions as closed work sheets apply to associated custody chains
+
+### Invoice Upload
+When uploading an invoice file to a sheet project:
+- Sheet status is automatically set to `INVOICED`
+- Invoice reference can be set via `invoice_reference` parameter

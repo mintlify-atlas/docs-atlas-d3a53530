@@ -1,0 +1,603 @@
+---
+title: 'Calendar Events'
+description: 'Manage project calendar events for maintenance, installations, and inspections'
+---
+
+# Calendar Events API
+
+Manage calendar events for project activities including maintenance schedules, equipment installations, removals, and inspections. Events can track resources, assign technicians, and monitor completion status.
+
+## Create Calendar Event
+
+<CodeGroup>
+```bash POST /api/calendar/events/
+curl -X POST https://api.mantis.com/api/calendar/events/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": 789,
+    "title": "Equipment Maintenance",
+    "description": "Scheduled maintenance for field equipment",
+    "event_type": "MAINTENANCE",
+    "priority": "HIGH",
+    "start_date": "2026-03-20",
+    "end_date": "2026-03-22",
+    "start_time": "08:00",
+    "end_time": "17:00",
+    "responsible_technical_id": 123,
+    "details": [
+      {
+        "resource_item_id": 101,
+        "description": "Replace oil filter",
+        "cost": 150.00
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+Create a new calendar event with resource details and assignments.
+
+### Request Body
+
+<ParamField body="project_id" type="integer" required>
+  Project ID this event belongs to
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  Event title/summary
+</ParamField>
+
+<ParamField body="start_date" type="string" required>
+  Event start date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="description" type="string">
+  Detailed event description
+</ParamField>
+
+<ParamField body="event_type" type="string">
+  Type of event. Options:
+  - `MAINTENANCE` (default)
+  - `INSTALLATION`
+  - `REMOVAL`
+  - `INSPECTION`
+  - `OTHER`
+</ParamField>
+
+<ParamField body="priority" type="string">
+  Event priority. Options:
+  - `LOW`
+  - `MEDIUM` (default)
+  - `HIGH`
+  - `URGENT`
+</ParamField>
+
+<ParamField body="end_date" type="string">
+  Event end date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="start_time" type="string">
+  Event start time (HH:MM or HH:MM:SS)
+</ParamField>
+
+<ParamField body="end_time" type="string">
+  Event end time (HH:MM or HH:MM:SS)
+</ParamField>
+
+<ParamField body="responsible_technical_id" type="integer">
+  ID of technical staff member responsible for this event
+</ParamField>
+
+<ParamField body="color" type="string">
+  Color code for calendar display (e.g., "#FF5733")
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Additional notes
+</ParamField>
+
+<ParamField body="details" type="array">
+  Array of event detail items (resources/tasks)
+  <ParamField body="resource_item_id" type="integer" required>
+    Resource/equipment item ID
+  </ParamField>
+  <ParamField body="project_resource_item_id" type="integer">
+    Project-specific resource assignment ID
+  </ParamField>
+  <ParamField body="description" type="string">
+    Task/activity description
+  </ParamField>
+  <ParamField body="cost" type="number">
+    Estimated or actual cost for this item
+  </ParamField>
+  <ParamField body="is_completed" type="boolean">
+    Completion status (default: false)
+  </ParamField>
+  <ParamField body="completed_date" type="string">
+    Completion date if completed (YYYY-MM-DD)
+  </ParamField>
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if creation was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Created calendar event object (see [Calendar Event Object](#calendar-event-object))
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Evento de calendario creado exitosamente",
+  "data": {
+    "id": 567,
+    "project_id": 789,
+    "project_name": "Project Alpha",
+    "title": "Equipment Maintenance",
+    "description": "Scheduled maintenance for field equipment",
+    "event_type": "MAINTENANCE",
+    "event_type_display": "Mantenimiento",
+    "priority": "HIGH",
+    "priority_display": "Alta",
+    "status": "SCHEDULED",
+    "status_display": "Programado",
+    "start_date": "2026-03-20",
+    "end_date": "2026-03-22",
+    "start_time": "08:00",
+    "end_time": "17:00",
+    "responsible_technical_id": 123,
+    "responsible_technical_name": "Juan Pérez",
+    "color": null,
+    "notes": null,
+    "created_at": "2026-03-15T10:30:00Z",
+    "details": [
+      {
+        "id": 1,
+        "resource_item_id": 101,
+        "resource_item_name": "Generator XYZ",
+        "resource_item_code": "GEN-001",
+        "description": "Replace oil filter",
+        "cost": 150.00,
+        "is_completed": false,
+        "completed_date": null
+      }
+    ]
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Update Calendar Event
+
+<CodeGroup>
+```bash PUT /api/calendar/events/{event_id}/
+curl -X PUT https://api.mantis.com/api/calendar/events/567/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Updated Maintenance Schedule",
+    "priority": "URGENT",
+    "status": "IN_PROGRESS"
+  }'
+```
+
+```bash PUT (Alternative)
+curl -X PUT https://api.mantis.com/api/calendar/events/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 567,
+    "title": "Updated Title"
+  }'
+```
+</CodeGroup>
+
+Update an existing calendar event. All fields except those required for creation are optional.
+
+### Path Parameters
+
+<ParamField path="event_id" type="integer">
+  Calendar event ID (can also be provided in request body as "id")
+</ParamField>
+
+### Request Body
+
+<ParamField body="id" type="integer">
+  Event ID (if not provided in path)
+</ParamField>
+
+All other fields from the create endpoint are optional. Only provided fields will be updated.
+
+### Updating Details
+
+When updating the `details` array:
+- Existing details are soft-deleted (marked as inactive)
+- New details from the request are created
+- This allows complete replacement of the details list
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if update was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated calendar event object
+</ResponseField>
+
+---
+
+## Move Event (Drag & Drop)
+
+<CodeGroup>
+```bash PATCH /api/calendar/events/{event_id}/move/
+curl -X PATCH https://api.mantis.com/api/calendar/events/567/move/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_date": "2026-03-25"
+  }'
+```
+
+```bash PATCH (With Duration)
+curl -X PATCH https://api.mantis.com/api/calendar/events/567/move/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_date": "2026-03-25",
+    "end_date": "2026-03-27"
+  }'
+```
+</CodeGroup>
+
+Move an event to a new date. If the event has an end date, the duration is preserved unless explicitly overridden.
+
+### Path Parameters
+
+<ParamField path="event_id" type="integer">
+  Calendar event ID (can also be provided in request body as "id")
+</ParamField>
+
+### Request Body
+
+<ParamField body="start_date" type="string" required>
+  New start date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="end_date" type="string">
+  New end date (YYYY-MM-DD). If not provided and event has duration, end date is adjusted to maintain the same duration.
+</ParamField>
+
+### Duration Preservation
+
+If the event originally spans 3 days (e.g., March 1-3) and you move it to March 10, the end date automatically becomes March 12 to preserve the 3-day duration.
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if move was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated calendar event object
+</ResponseField>
+
+---
+
+## Get Calendar Event
+
+<CodeGroup>
+```bash GET (Single)
+curl -X GET https://api.mantis.com/api/calendar/events/567/
+```
+
+```bash GET (By Project)
+curl -X GET "https://api.mantis.com/api/calendar/events/?project_id=789"
+```
+
+```bash GET (By Project and Month)
+curl -X GET "https://api.mantis.com/api/calendar/events/?project_id=789&month=3&year=2026"
+```
+</CodeGroup>
+
+Retrieve a single event or list events for a project, optionally filtered by month.
+
+### Path Parameters (Single Event)
+
+<ParamField path="event_id" type="integer">
+  Calendar event ID
+</ParamField>
+
+### Query Parameters (List)
+
+<ParamField query="project_id" type="integer" required>
+  Project ID to filter events
+</ParamField>
+
+<ParamField query="month" type="integer">
+  Month number (1-12) to filter events
+</ParamField>
+
+<ParamField query="year" type="integer">
+  Year to filter events (required if month is provided)
+</ParamField>
+
+### Month Filtering Logic
+
+Events are included if they overlap with the specified month:
+- Event starts before month ends AND
+- Event ends after month starts (or has no end date)
+
+This ensures multi-day events spanning month boundaries are included.
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if query was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" or="array">
+  Single event object or array of event objects
+</ResponseField>
+
+---
+
+## Delete Calendar Event
+
+<CodeGroup>
+```bash DELETE /api/calendar/events/{event_id}/delete/
+curl -X DELETE https://api.mantis.com/api/calendar/events/567/delete/
+```
+</CodeGroup>
+
+Soft delete a calendar event. The event is marked as deleted but not permanently removed.
+
+### Path Parameters
+
+<ParamField path="pk" type="integer" required>
+  Calendar event ID to delete
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if deletion was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message
+</ResponseField>
+
+---
+
+## Calendar Event Object
+
+<ResponseField name="id" type="integer">
+  Event ID
+</ResponseField>
+
+<ResponseField name="project_id" type="integer">
+  Associated project ID
+</ResponseField>
+
+<ResponseField name="project_name" type="string">
+  Project name
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Event title
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Event description
+</ResponseField>
+
+<ResponseField name="event_type" type="string">
+  Event type code
+</ResponseField>
+
+<ResponseField name="event_type_display" type="string">
+  Human-readable event type
+</ResponseField>
+
+<ResponseField name="priority" type="string">
+  Priority code
+</ResponseField>
+
+<ResponseField name="priority_display" type="string">
+  Human-readable priority
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status (SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED)
+</ResponseField>
+
+<ResponseField name="status_display" type="string">
+  Human-readable status
+</ResponseField>
+
+<ResponseField name="start_date" type="string">
+  Start date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="end_date" type="string" nullable>
+  End date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="start_time" type="string" nullable>
+  Start time (HH:MM format)
+</ResponseField>
+
+<ResponseField name="end_time" type="string" nullable>
+  End time (HH:MM format)
+</ResponseField>
+
+<ResponseField name="responsible_technical_id" type="integer" nullable>
+  Responsible technician ID
+</ResponseField>
+
+<ResponseField name="responsible_technical_name" type="string" nullable>
+  Responsible technician name
+</ResponseField>
+
+<ResponseField name="color" type="string" nullable>
+  Calendar display color
+</ResponseField>
+
+<ResponseField name="notes" type="string" nullable>
+  Additional notes
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  Creation timestamp (ISO 8601)
+</ResponseField>
+
+<ResponseField name="details" type="array">
+  Event detail items (only included when include_details=True)
+  <ResponseField name="id" type="integer">
+    Detail ID
+  </ResponseField>
+  <ResponseField name="resource_item_id" type="integer">
+    Resource item ID
+  </ResponseField>
+  <ResponseField name="resource_item_name" type="string">
+    Resource item name
+  </ResponseField>
+  <ResponseField name="resource_item_code" type="string">
+    Resource item code
+  </ResponseField>
+  <ResponseField name="project_resource_item_id" type="integer" nullable>
+    Project resource assignment ID
+  </ResponseField>
+  <ResponseField name="description" type="string">
+    Task description
+  </ResponseField>
+  <ResponseField name="cost" type="number">
+    Cost amount
+  </ResponseField>
+  <ResponseField name="is_completed" type="boolean">
+    Completion status
+  </ResponseField>
+  <ResponseField name="completed_date" type="string" nullable>
+    Completion date (ISO 8601)
+  </ResponseField>
+</ResponseField>
+
+---
+
+## Workflow Examples
+
+### Schedule Maintenance Event
+
+```bash
+# 1. Create event
+curl -X POST https://api.mantis.com/api/calendar/events/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": 789,
+    "title": "Monthly Equipment Check",
+    "event_type": "MAINTENANCE",
+    "priority": "MEDIUM",
+    "start_date": "2026-04-01",
+    "start_time": "09:00",
+    "responsible_technical_id": 123
+  }'
+
+# 2. Add tasks
+curl -X PUT https://api.mantis.com/api/calendar/events/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 567,
+    "details": [
+      {"resource_item_id": 101, "description": "Check oil level", "cost": 0},
+      {"resource_item_id": 102, "description": "Replace filter", "cost": 150}
+    ]
+  }'
+
+# 3. Start work
+curl -X PUT https://api.mantis.com/api/calendar/events/ \
+  -H "Content-Type: application/json" \
+  -d '{"id": 567, "status": "IN_PROGRESS"}'
+
+# 4. Mark task complete
+curl -X PUT https://api.mantis.com/api/calendar/events/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 567,
+    "details": [
+      {
+        "resource_item_id": 101,
+        "description": "Check oil level",
+        "is_completed": true,
+        "completed_date": "2026-04-01"
+      }
+    ]
+  }'
+```
+
+### Get Monthly Calendar View
+
+```python
+import requests
+from datetime import datetime
+
+# Get all events for March 2026
+response = requests.get(
+    "https://api.mantis.com/api/calendar/events/",
+    params={
+        "project_id": 789,
+        "month": 3,
+        "year": 2026
+    }
+)
+
+events = response.json()["data"]
+
+# Group by date
+from collections import defaultdict
+events_by_date = defaultdict(list)
+
+for event in events:
+    date = event["start_date"]
+    events_by_date[date].append(event)
+
+# Display
+for date in sorted(events_by_date.keys()):
+    print(f"\n{date}:")
+    for event in events_by_date[date]:
+        print(f"  - {event['title']} ({event['priority_display']})")
+```
+
+### Drag and Drop Event
+
+```javascript
+// Frontend drag-and-drop handler
+function onEventDrop(eventId, newStartDate) {
+  fetch(`https://api.mantis.com/api/calendar/events/${eventId}/move/`, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      start_date: newStartDate
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log('Event moved:', data);
+    // Refresh calendar view
+  });
+}
+```

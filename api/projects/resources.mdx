@@ -1,0 +1,930 @@
+---
+title: 'Project Resources'
+description: 'Manage equipment and service resources assigned to projects'
+---
+
+## Overview
+
+The Project Resources API allows you to manage the assignment, tracking, and release of equipment and services for projects. You can add resources to projects, update their configuration, release them when no longer needed, and query available resources.
+
+## Endpoints
+
+### Get Available Resources
+
+Retrieve a list of all available equipment and resources that can be assigned to projects.
+
+```http
+GET /api/projects/resources/available/
+```
+
+#### Query Parameters
+
+<ParamField query="type_equipment" type="string">
+  Filter by equipment type (e.g., BTSNHM, LVMNOS, SERVIC)
+</ParamField>
+
+<ParamField query="status_equipment" type="string">
+  Filter by equipment status (e.g., FUNCIONANDO, DAÑADO)
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search by equipment code or name
+</ParamField>
+
+<ParamField query="exclude_services" type="boolean" default="true">
+  Exclude service-type resources from results
+</ParamField>
+
+#### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="count" type="integer">
+  Total number of available resources
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of available resource objects
+  
+  <Expandable title="Resource object">
+    <ResponseField name="id" type="integer">
+      Unique identifier for the resource
+    </ResponseField>
+    
+    <ResponseField name="code" type="string">
+      Resource code (e.g., BS-001)
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Resource name
+    </ResponseField>
+    
+    <ResponseField name="display_name" type="string">
+      Formatted display name with type
+    </ResponseField>
+    
+    <ResponseField name="type_equipment" type="string">
+      Equipment type code
+    </ResponseField>
+    
+    <ResponseField name="type_equipment_display" type="string">
+      Human-readable equipment type
+    </ResponseField>
+    
+    <ResponseField name="brand" type="string">
+      Equipment brand
+    </ResponseField>
+    
+    <ResponseField name="model" type="string">
+      Equipment model
+    </ResponseField>
+    
+    <ResponseField name="status_equipment" type="string">
+      Equipment condition status
+    </ResponseField>
+    
+    <ResponseField name="status_disponibility" type="string">
+      Availability status (DISPONIBLE or RENTADO)
+    </ResponseField>
+    
+    <ResponseField name="available" type="boolean">
+      Whether the resource is currently available
+    </ResponseField>
+    
+    <ResponseField name="current_location" type="string">
+      Current location of the resource
+    </ResponseField>
+    
+    <ResponseField name="capacity_gallons" type="string">
+      Capacity in gallons (for applicable equipment)
+    </ResponseField>
+    
+    <ResponseField name="assigned_project" type="object">
+      Project information if resource is currently assigned
+      
+      <Expandable title="Project details">
+        <ResponseField name="id" type="integer">
+          Project ID
+        </ResponseField>
+        
+        <ResponseField name="partner_name" type="string">
+          Client/partner name
+        </ResponseField>
+        
+        <ResponseField name="location" type="string">
+          Project location
+        </ResponseField>
+        
+        <ResponseField name="url" type="string">
+          URL to project details
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Example Request
+
+```bash
+curl -X GET "https://api.mantis.example/api/projects/resources/available/?type_equipment=BTSNHM&status_equipment=FUNCIONANDO" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+#### Example Response
+
+```json
+{
+  "success": true,
+  "count": 2,
+  "data": [
+    {
+      "id": 5,
+      "code": "BS-001",
+      "name": "Batería Sanitaria Hombre",
+      "display_name": "Batería Sanitaria Hombre - BATERIA SANITARIA HOMBRE",
+      "type_equipment": "BTSNHM",
+      "type_equipment_display": "BATERIA SANITARIA HOMBRE",
+      "brand": "ACME",
+      "model": "BS-2024",
+      "status_equipment": "FUNCIONANDO",
+      "status_disponibility": "DISPONIBLE",
+      "available": true,
+      "current_location": "BASE PEISOL",
+      "capacity_gallons": "500.00",
+      "assigned_project": null,
+      "is_selected": false,
+      "is_confirm_delete": false
+    }
+  ]
+}
+```
+
+---
+
+### Add Resource to Project
+
+Assign one or more resources to a project with cost and scheduling information.
+
+```http
+POST /api/projects/resources/add/
+```
+
+#### Request Body
+
+The request body should be an array of resource objects to add:
+
+<ParamField body="project_id" type="integer" required>
+  ID of the project to assign resources to
+</ParamField>
+
+<ParamField body="resource_id" type="integer" required>
+  ID of the resource item to assign
+</ParamField>
+
+<ParamField body="cost" type="decimal" required>
+  Rental or service cost
+</ParamField>
+
+<ParamField body="maintenance_cost" type="decimal">
+  Maintenance cost (creates a separate maintenance service entry)
+</ParamField>
+
+<ParamField body="frequency_type" type="string" default="DAY">
+  Frequency type for scheduling: `DAY`, `WEEK`, or `MONTH`
+</ParamField>
+
+<ParamField body="interval_days" type="integer">
+  Number of days between occurrences (used when frequency_type is DAY)
+</ParamField>
+
+<ParamField body="weekdays" type="array">
+  Days of the week (0=Monday, 6=Sunday). Used when frequency_type is WEEK
+</ParamField>
+
+<ParamField body="monthdays" type="array">
+  Days of the month (1-31). Used when frequency_type is MONTH
+</ParamField>
+
+<ParamField body="operation_start_date" type="string" required>
+  Start date for resource operation (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="operation_end_date" type="string">
+  End date for resource operation (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="physical_equipment_code" type="integer">
+  ID of physical equipment this service is associated with
+</ParamField>
+
+<ParamField body="detailed_description" type="string">
+  Detailed description of the resource assignment
+</ParamField>
+
+<ParamField body="commitment_date" type="string">
+  Date when equipment is committed to the project
+</ParamField>
+
+#### Response
+
+<ResponseField name="data" type="array">
+  Array of created project resource assignments
+  
+  <Expandable title="Project resource object">
+    <ResponseField name="id" type="integer">
+      Unique identifier for the project resource assignment
+    </ResponseField>
+    
+    <ResponseField name="project_id" type="integer">
+      Project ID
+    </ResponseField>
+    
+    <ResponseField name="project_name" type="string">
+      Project name
+    </ResponseField>
+    
+    <ResponseField name="resource_item_id" type="integer">
+      Resource item ID
+    </ResponseField>
+    
+    <ResponseField name="resource_item_name" type="string">
+      Resource name
+    </ResponseField>
+    
+    <ResponseField name="type_resource" type="string">
+      Resource type: EQUIPO or SERVICIO
+    </ResponseField>
+    
+    <ResponseField name="detailed_description" type="string">
+      Formatted description (e.g., "ALQUILER / BS-001 / BATERIA SANITARIA")
+    </ResponseField>
+    
+    <ResponseField name="cost" type="decimal">
+      Rental or service cost
+    </ResponseField>
+    
+    <ResponseField name="interval_days" type="integer">
+      Frequency interval in days
+    </ResponseField>
+    
+    <ResponseField name="operation_start_date" type="string">
+      Start date (ISO 8601 format)
+    </ResponseField>
+    
+    <ResponseField name="operation_end_date" type="string">
+      End date (ISO 8601 format)
+    </ResponseField>
+    
+    <ResponseField name="is_retired" type="boolean">
+      Whether the resource has been retired from the project
+    </ResponseField>
+    
+    <ResponseField name="retirement_date" type="string">
+      Date of retirement (if applicable)
+    </ResponseField>
+    
+    <ResponseField name="retirement_reason" type="string">
+      Reason for retirement
+    </ResponseField>
+    
+    <ResponseField name="is_active" type="boolean">
+      Whether the assignment is active
+    </ResponseField>
+    
+    <ResponseField name="is_deleted" type="boolean">
+      Soft delete flag
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      Creation timestamp
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Example Request
+
+```bash
+curl -X POST "https://api.mantis.example/api/projects/resources/add/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '[
+    {
+      "project_id": 1,
+      "resource_id": 5,
+      "cost": 150.00,
+      "maintenance_cost": 50.00,
+      "frequency_type": "DAY",
+      "interval_days": 7,
+      "operation_start_date": "2025-10-05",
+      "operation_end_date": "2025-12-31",
+      "commitment_date": "2025-10-05"
+    }
+  ]'
+```
+
+#### Example Response
+
+```json
+{
+  "data": [
+    {
+      "id": 10,
+      "project_id": 1,
+      "project_name": "Proyecto 1 - Empresa XYZ",
+      "resource_item_id": 5,
+      "resource_item_name": "Batería Sanitaria Hombre",
+      "type_resource": "EQUIPO",
+      "detailed_description": "ALQUILER / BS-001 / BATERIA SANITARIA HOMBRE",
+      "cost": 150.00,
+      "interval_days": 7,
+      "operation_start_date": "2025-10-05",
+      "operation_end_date": "2025-12-31",
+      "is_retired": false,
+      "retirement_date": null,
+      "retirement_reason": null,
+      "is_active": true,
+      "is_deleted": false,
+      "created_at": "2025-10-05T10:30:00Z",
+      "updated_at": "2025-10-05T10:30:00Z"
+    },
+    {
+      "id": 11,
+      "project_id": 1,
+      "project_name": "Proyecto 1 - Empresa XYZ",
+      "resource_item_id": 100,
+      "resource_item_name": "Servicio General",
+      "type_resource": "SERVICIO",
+      "detailed_description": "MANTENIMIENTO / BS-001",
+      "cost": 50.00,
+      "interval_days": 7,
+      "operation_start_date": "2025-10-05",
+      "operation_end_date": "2025-12-31",
+      "is_retired": false,
+      "retirement_date": null,
+      "retirement_reason": null,
+      "is_active": true,
+      "is_deleted": false,
+      "created_at": "2025-10-05T10:30:00Z",
+      "updated_at": "2025-10-05T10:30:00Z"
+    }
+  ]
+}
+```
+
+<Info>
+  **Automatic Status Updates**: When equipment is added to a project:
+  - `stst_status_disponibility` changes to `RENTADO`
+  - `stst_current_location` updates to project location
+  - `stst_current_project_id` set to the project ID
+  - `stst_commitment_date` set to operation start date
+</Info>
+
+---
+
+### Update Resource Item
+
+Update the cost, frequency, or dates for a resource assigned to a project.
+
+```http
+PUT /api/projects/resources/update/
+```
+
+#### Request Body
+
+<ParamField body="id" type="integer" required>
+  ID of the ProjectResourceItem to update
+</ParamField>
+
+<ParamField body="cost" type="decimal">
+  Updated rental or service cost
+</ParamField>
+
+<ParamField body="frequency_type" type="string">
+  Frequency type: `DAY`, `WEEK`, or `MONTH`
+</ParamField>
+
+<ParamField body="interval_days" type="integer">
+  Number of days between occurrences (for DAY frequency)
+</ParamField>
+
+<ParamField body="weekdays" type="array">
+  Days of the week (0=Monday, 6=Sunday) for WEEK frequency
+</ParamField>
+
+<ParamField body="monthdays" type="array">
+  Days of the month (1-31) for MONTH frequency
+</ParamField>
+
+<ParamField body="detailed_description" type="string">
+  Updated detailed description
+</ParamField>
+
+<ParamField body="operation_start_date" type="string">
+  Updated start date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="operation_end_date" type="string">
+  Updated end date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="maintenance_cost" type="decimal">
+  Updated maintenance cost (updates linked service if it exists)
+</ParamField>
+
+<ParamField body="is_retired" type="boolean">
+  Set to true to retire the resource
+</ParamField>
+
+<ParamField body="retirement_date" type="string">
+  Date of retirement (required if is_retired is true)
+</ParamField>
+
+<ParamField body="retirement_reason" type="string">
+  Reason for retirement (required if is_retired is true)
+</ParamField>
+
+#### Response
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated project resource object with all fields
+</ResponseField>
+
+#### Example Request
+
+```bash
+curl -X PUT "https://api.mantis.example/api/projects/resources/update/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "id": 10,
+    "cost": 175.00,
+    "frequency_type": "WEEK",
+    "weekdays": [1, 3, 5],
+    "maintenance_cost": 60.00
+  }'
+```
+
+#### Example Response
+
+```json
+{
+  "message": "Recurso del proyecto actualizado correctamente.",
+  "data": {
+    "id": 10,
+    "project_id": 1,
+    "type": "BTSNHM",
+    "resource_item_id": 5,
+    "resource_item_code": "BS-001",
+    "resource_item_name": "Batería Sanitaria Hombre",
+    "detailed_description": "ALQUILER / BS-001 / BATERIA SANITARIA HOMBRE",
+    "cost": 175.00,
+    "frequency_type": "WEEK",
+    "interval_days": 0,
+    "weekdays": [1, 3, 5],
+    "monthdays": null,
+    "operation_start_date": "2025-10-05",
+    "operation_end_date": "2025-12-31",
+    "is_active": true,
+    "type_resource": "EQUIPO",
+    "is_retired": false,
+    "retirement_date": null,
+    "retirement_reason": null,
+    "notes": null
+  }
+}
+```
+
+<Note>
+  **Linked Service Updates**: When updating maintenance_cost for equipment, any linked maintenance service will automatically have its cost and frequency synchronized.
+</Note>
+
+---
+
+### Delete Resource from Project
+
+Permanently remove a resource assignment from a project.
+
+```http
+DELETE /api/projects/resources/delete/<id_project_resource>/
+```
+
+#### Path Parameters
+
+<ParamField path="id_project_resource" type="integer" required>
+  ID of the ProjectResourceItem to delete
+</ParamField>
+
+#### Response
+
+Returns HTTP 204 No Content on success.
+
+#### Error Responses
+
+<ResponseField name="error" type="string">
+  Error message if deletion fails
+</ResponseField>
+
+**404 Not Found**: Resource not found
+
+**400 Bad Request**: Resource cannot be deleted (e.g., used in custody chain)
+
+#### Example Request
+
+```bash
+curl -X DELETE "https://api.mantis.example/api/projects/resources/delete/10/" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+<Warning>
+  **Custody Chain Protection**: Resources that have been used in a custody chain cannot be deleted. The API will return an error with status 400.
+</Warning>
+
+<Info>
+  **Resource Liberation**: When a resource is deleted:
+  - Physical equipment status changes back to `DISPONIBLE`
+  - `stst_current_project_id` is cleared
+  - The ProjectResourceItem record is permanently deleted
+</Info>
+
+---
+
+### Release Resource from Project
+
+Release (retire) a resource from a project without permanently deleting it.
+
+```http
+POST /api/projects/resources/release/
+```
+
+#### Request Body
+
+<ParamField body="id" type="integer" required>
+  ID of the ProjectResourceItem to release
+</ParamField>
+
+#### Response
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Released project resource object
+</ResponseField>
+
+<ResponseField name="related_services_released" type="array">
+  IDs of related services that were also released (equipment only)
+</ResponseField>
+
+<ResponseField name="related_services_count" type="integer">
+  Number of related services released (equipment only)
+</ResponseField>
+
+#### Example Request
+
+```bash
+curl -X POST "https://api.mantis.example/api/projects/resources/release/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "id": 10
+  }'
+```
+
+#### Example Response (Equipment)
+
+```json
+{
+  "message": "Equipo liberado correctamente.",
+  "data": {
+    "id": 10,
+    "project_id": 1,
+    "type_resource": "EQUIPO",
+    "resource_item_id": 5,
+    "resource_item_code": "BS-001",
+    "resource_item_name": "Batería Sanitaria Hombre",
+    "detailed_description": "ALQUILER / BS-001 / BATERIA SANITARIA HOMBRE",
+    "physical_equipment_code": 0,
+    "cost": "175.00",
+    "is_active": true,
+    "is_retired": true,
+    "operation_start_date": "2025-10-05",
+    "operation_end_date": "2025-12-31"
+  },
+  "related_services_released": [11],
+  "related_services_count": 1
+}
+```
+
+#### Example Response (Service)
+
+```json
+{
+  "message": "Servicio liberado correctamente.",
+  "data": {
+    "id": 11,
+    "project_id": 1,
+    "type_resource": "SERVICIO",
+    "resource_item_id": 100,
+    "resource_item_code": "PEISOL-SERV00",
+    "resource_item_name": "Servicio General",
+    "detailed_description": "MANTENIMIENTO / BS-001",
+    "physical_equipment_code": 5,
+    "cost": "60.00",
+    "is_active": true,
+    "is_retired": true,
+    "operation_start_date": "2025-10-05",
+    "operation_end_date": "2025-12-31"
+  }
+}
+```
+
+<Info>
+  **Difference from Delete**: Release marks resources as retired (`is_retired=true`) and preserves the historical record, while Delete permanently removes the assignment.
+</Info>
+
+<Note>
+  **Automatic Service Release**: When equipment is released, all associated maintenance and services are automatically retired as well.
+</Note>
+
+---
+
+### Get Project Resources
+
+Retrieve all resources assigned to a specific project.
+
+```http
+GET /api/projects/<project_id>/resources/
+```
+
+#### Path Parameters
+
+<ParamField path="project_id" type="integer" required>
+  ID of the project
+</ParamField>
+
+#### Response
+
+<ResponseField name="data" type="array">
+  Array of project resource objects
+  
+  <Expandable title="Project resource object">
+    <ResponseField name="id" type="integer">
+      Project resource assignment ID
+    </ResponseField>
+    
+    <ResponseField name="project_id" type="integer">
+      Project ID
+    </ResponseField>
+    
+    <ResponseField name="type" type="string">
+      Equipment type code
+    </ResponseField>
+    
+    <ResponseField name="type_equipment_display" type="string">
+      Human-readable equipment type
+    </ResponseField>
+    
+    <ResponseField name="resource_item_id" type="integer">
+      Resource item ID
+    </ResponseField>
+    
+    <ResponseField name="resource_item_code" type="string">
+      Resource code
+    </ResponseField>
+    
+    <ResponseField name="resource_item_name" type="string">
+      Resource name
+    </ResponseField>
+    
+    <ResponseField name="detailed_description" type="string">
+      Detailed description
+    </ResponseField>
+    
+    <ResponseField name="cost" type="decimal">
+      Cost per period
+    </ResponseField>
+    
+    <ResponseField name="frequency_type" type="string">
+      Frequency type (DAY, WEEK, MONTH)
+    </ResponseField>
+    
+    <ResponseField name="interval_days" type="integer">
+      Day interval for DAY frequency
+    </ResponseField>
+    
+    <ResponseField name="weekdays" type="array">
+      Selected weekdays for WEEK frequency
+    </ResponseField>
+    
+    <ResponseField name="monthdays" type="array">
+      Selected month days for MONTH frequency
+    </ResponseField>
+    
+    <ResponseField name="operation_start_date" type="string">
+      Operation start date (ISO 8601)
+    </ResponseField>
+    
+    <ResponseField name="operation_end_date" type="string">
+      Operation end date (ISO 8601)
+    </ResponseField>
+    
+    <ResponseField name="is_active" type="boolean">
+      Active status
+    </ResponseField>
+    
+    <ResponseField name="type_resource" type="string">
+      EQUIPO or SERVICIO
+    </ResponseField>
+    
+    <ResponseField name="is_retired" type="boolean">
+      Whether resource has been retired
+    </ResponseField>
+    
+    <ResponseField name="retirement_date" type="string">
+      Retirement date if applicable
+    </ResponseField>
+    
+    <ResponseField name="retirement_reason" type="string">
+      Reason for retirement
+    </ResponseField>
+    
+    <ResponseField name="is_deleteable" type="boolean">
+      Whether this resource can be deleted
+    </ResponseField>
+    
+    <ResponseField name="notes" type="string">
+      Additional notes
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Example Request
+
+```bash
+curl -X GET "https://api.mantis.example/api/projects/1/resources/" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+#### Example Response
+
+```json
+{
+  "data": [
+    {
+      "id": 10,
+      "project_id": 1,
+      "type": "BTSNHM",
+      "type_equipment_display": "BATERIA SANITARIA HOMBRE",
+      "resource_item_id": 5,
+      "resource_item_code": "BS-001",
+      "resource_item_name": "Batería Sanitaria Hombre",
+      "detailed_description": "ALQUILER / BS-001 / BATERIA SANITARIA HOMBRE",
+      "cost": 175.00,
+      "frequency_type": "WEEK",
+      "interval_days": 0,
+      "weekdays": [1, 3, 5],
+      "monthdays": null,
+      "operation_start_date": "2025-10-05",
+      "operation_end_date": "2025-12-31",
+      "is_active": true,
+      "is_selected": false,
+      "type_resource": "EQUIPO",
+      "is_retired": false,
+      "retirement_date": null,
+      "retirement_reason": null,
+      "is_confirm_delete": false,
+      "is_deleteable": true,
+      "notes": null
+    }
+  ]
+}
+```
+
+---
+
+## Error Codes
+
+The Project Resources API uses standard HTTP status codes:
+
+<ResponseField name="200" type="OK">
+  Request successful
+</ResponseField>
+
+<ResponseField name="201" type="Created">
+  Resource successfully created
+</ResponseField>
+
+<ResponseField name="204" type="No Content">
+  Resource successfully deleted
+</ResponseField>
+
+<ResponseField name="400" type="Bad Request">
+  Invalid request parameters or validation error
+  - Missing required fields
+  - Invalid date format
+  - Resource already rented
+  - Resource used in custody chain (cannot delete)
+  - Invalid frequency configuration
+</ResponseField>
+
+<ResponseField name="404" type="Not Found">
+  - Project not found or inactive
+  - Resource not found or inactive
+  - ProjectResourceItem not found
+</ResponseField>
+
+<ResponseField name="500" type="Internal Server Error">
+  Unexpected server error (check logs)
+</ResponseField>
+
+---
+
+## Validation Rules
+
+### Adding Resources
+
+- `project_id`, `resource_id`, `cost`, and `operation_start_date` are required
+- Resource must have `status_disponibility` of `DISPONIBLE` (not `RENTADO`)
+- Dates must be in `YYYY-MM-DD` format
+- `operation_end_date` cannot be earlier than `operation_start_date`
+- For `frequency_type="DAY"`: `interval_days` must be ≥ 1
+- For `frequency_type="WEEK"`: `weekdays` array must have at least one value (0-6)
+- For `frequency_type="MONTH"`: `monthdays` array must have at least one value (1-31)
+
+### Updating Resources
+
+- Cannot update retired resources (`is_retired=True`)
+- Cannot update resources in inactive projects
+- Frequency type changes must include appropriate interval/weekdays/monthdays
+
+### Deleting Resources
+
+- Cannot delete resources used in custody chains
+- Resource must exist and belong to an active project
+
+### Releasing Resources
+
+- Cannot release already retired resources
+- When releasing equipment, all linked services are automatically retired
+
+---
+
+## Data Model: ProjectResourceItem
+
+The `ProjectResourceItem` model represents the assignment of a resource to a project:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | Integer | Primary key |
+| `project` | ForeignKey | Reference to Project |
+| `resource_item` | ForeignKey | Reference to ResourceItem |
+| `type_resource` | String | EQUIPO or SERVICIO |
+| `detailed_description` | String | Formatted description |
+| `physical_equipment_code` | Integer | Physical equipment ID (for services) |
+| `cost` | Decimal | Cost per period |
+| `frequency_type` | String | DAY, WEEK, or MONTH |
+| `interval_days` | Integer | Days between occurrences |
+| `weekdays` | JSON | Array of weekday numbers |
+| `monthdays` | JSON | Array of month day numbers |
+| `operation_start_date` | Date | Start of operation |
+| `operation_end_date` | Date | End of operation |
+| `is_retired` | Boolean | Retirement status |
+| `retirement_date` | Date | Date of retirement |
+| `retirement_reason` | Text | Reason for retirement |
+| `is_active` | Boolean | Active flag |
+| `is_deleted` | Boolean | Soft delete flag |
+
+---
+
+## Best Practices
+
+<Card title="Use Batch Creation" icon="layer-group">
+  When adding multiple resources to a project, include them all in a single POST request array for better performance.
+</Card>
+
+<Card title="Release Instead of Delete" icon="archive">
+  Use the release endpoint to retire resources instead of deleting them to preserve historical records and audit trails.
+</Card>
+
+<Card title="Check Availability First" icon="search">
+  Before assigning resources, query the available resources endpoint to ensure equipment is not already in use.
+</Card>
+
+<Card title="Sync Maintenance Services" icon="wrench">
+  When updating equipment frequency or dates, related maintenance services are automatically synchronized.
+</Card>
+
+<Card title="Handle Date Ranges Carefully" icon="calendar">
+  Ensure operation dates fall within the project's start and end dates for proper scheduling.
+</Card>

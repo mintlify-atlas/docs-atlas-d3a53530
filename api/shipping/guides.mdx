@@ -1,0 +1,578 @@
+---
+title: 'Shipping Guides'
+description: 'Create, update, and manage shipping guides (guías de remisión) for transport operations'
+---
+
+# Shipping Guides API
+
+Manage shipping guides (guías de remisión) for tracking equipment and material transport between locations. Supports entry and exit guides with detailed item tracking.
+
+## Create Shipping Guide
+
+<CodeGroup>
+```bash POST /api/shipping/guides/
+curl -X POST https://api.mantis.com/api/shipping/guides/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": 789,
+    "type_shipping_guide": "EXIT",
+    "issue_date": "2026-03-15",
+    "origin_place": "Warehouse A",
+    "destination_place": "Field Site B",
+    "carrier_name": "Juan Pérez",
+    "carrier_ci": "1234567890",
+    "vehicle_plate": "ABC-1234",
+    "details": [
+      {
+        "description": "Equipment Case",
+        "quantity": 5,
+        "unit": "units",
+        "id_resource_item": 101
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+Create a new shipping guide with transport details and item manifest.
+
+### Request Body
+
+<ParamField body="project_id" type="integer" required>
+  Project ID this guide belongs to
+</ParamField>
+
+<ParamField body="issue_date" type="string" required>
+  Guide issue date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="type_shipping_guide" type="string">
+  Guide type: `EXIT` (default) or `ENTRY`
+</ParamField>
+
+<ParamField body="guide_number" type="string">
+  Custom guide number (auto-generated if not provided). Must be unique.
+</ParamField>
+
+<ParamField body="start_date" type="string">
+  Transport start date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="end_date" type="string">
+  Transport end date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="origin_place" type="string">
+  Origin location
+</ParamField>
+
+<ParamField body="destination_place" type="string">
+  Destination location
+</ParamField>
+
+<ParamField body="carrier_name" type="string">
+  Name of the transport carrier
+</ParamField>
+
+<ParamField body="carrier_ci" type="string">
+  Carrier's identification number
+</ParamField>
+
+<ParamField body="vehicle_plate" type="string">
+  Vehicle license plate
+</ParamField>
+
+<ParamField body="dispatcher_name" type="string">
+  Name of person dispatching the shipment
+</ParamField>
+
+<ParamField body="dispatcher_ci" type="string">
+  Dispatcher's identification number
+</ParamField>
+
+<ParamField body="contact_name" type="string">
+  Contact person name at destination
+</ParamField>
+
+<ParamField body="contact_phone" type="string">
+  Contact person phone number
+</ParamField>
+
+<ParamField body="recibed_by" type="string">
+  Name of person receiving the shipment
+</ParamField>
+
+<ParamField body="recibed_ci" type="string">
+  Receiver's identification number
+</ParamField>
+
+<ParamField body="reason_transport" type="string">
+  Reason for transport (e.g., project requirement)
+</ParamField>
+
+<ParamField body="cost_transport" type="number">
+  Transport cost (decimal)
+</ParamField>
+
+<ParamField body="sheet_project_logistics_concept" type="string">
+  Logistics accounting concept/code
+</ParamField>
+
+<ParamField body="cost_stowage" type="number">
+  Stowage/loading cost (decimal)
+</ParamField>
+
+<ParamField body="sheet_project_stowage_concept" type="string">
+  Stowage accounting concept/code
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Additional notes
+</ParamField>
+
+<ParamField body="details" type="array">
+  Array of items being shipped
+  <ParamField body="description" type="string" required>
+    Item description
+  </ParamField>
+  <ParamField body="quantity" type="number" required>
+    Quantity of items
+  </ParamField>
+  <ParamField body="unit" type="string">
+    Unit of measurement (e.g., "units", "kg", "m")
+  </ParamField>
+  <ParamField body="id_resource_item" type="integer">
+    Resource item ID if tracking specific equipment
+  </ParamField>
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if creation was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Created shipping guide object (see [Shipping Guide Object](#shipping-guide-object))
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Guía de remisión creada exitosamente",
+  "data": {
+    "id": 456,
+    "project_id": 789,
+    "project_name": "Project Alpha",
+    "type_shipping_guide": "EXIT",
+    "type_shipping_guide_display": "Salida",
+    "guide_number": "GR-2026-001",
+    "issue_date": "2026-03-15",
+    "start_date": null,
+    "end_date": null,
+    "origin_place": "Warehouse A",
+    "destination_place": "Field Site B",
+    "carrier_name": "Juan Pérez",
+    "carrier_ci": "1234567890",
+    "vehicle_plate": "ABC-1234",
+    "status": "DRAFT",
+    "status_display": "Borrador",
+    "details": [
+      {
+        "id": 1,
+        "description": "Equipment Case",
+        "quantity": 5,
+        "unit": "units",
+        "id_resource_item": 101,
+        "resource_item_code": "EQ-001",
+        "resource_item_name": "Transport Case"
+      }
+    ]
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Update Shipping Guide
+
+<CodeGroup>
+```bash PUT /api/shipping/guides/
+curl -X PUT https://api.mantis.com/api/shipping/guides/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 456,
+    "destination_place": "Updated Field Site C",
+    "details": [
+      {
+        "description": "Equipment Case",
+        "quantity": 10,
+        "unit": "units"
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+Update an existing shipping guide. Only guides in `DRAFT` status can be edited.
+
+### Request Body
+
+<ParamField body="id" type="integer" required>
+  Shipping guide ID to update
+</ParamField>
+
+All other fields from the create endpoint are optional. Only provided fields will be updated.
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if update was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated shipping guide object
+</ResponseField>
+
+---
+
+## Change Guide Status
+
+<CodeGroup>
+```bash PATCH /api/shipping/guides/
+curl -X PATCH https://api.mantis.com/api/shipping/guides/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 456,
+    "status": "CLOSED"
+  }'
+```
+</CodeGroup>
+
+Change the status of a shipping guide. Status transitions are validated.
+
+### Request Body
+
+<ParamField body="id" type="integer" required>
+  Shipping guide ID
+</ParamField>
+
+<ParamField body="status" type="string" required>
+  New status. Options: `DRAFT`, `CLOSED`, `VOID`
+</ParamField>
+
+### Valid Status Transitions
+
+- From `DRAFT`: Can change to `CLOSED` or `VOID`
+- From `CLOSED`: Can change to `VOID` only
+- From `VOID`: No transitions allowed (final state)
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if status change was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated shipping guide object
+</ResponseField>
+
+<ResponseExample>
+```json Error - Invalid Transition
+{
+  "success": false,
+  "error": "No se puede cambiar de Cerrado a Borrador. Transiciones permitidas: ['VOID']"
+}
+```
+</ResponseExample>
+
+---
+
+## Get Shipping Guide
+
+<CodeGroup>
+```bash GET (Single)
+curl -X GET https://api.mantis.com/api/shipping/guides/456/
+```
+
+```bash GET (By Project)
+curl -X GET "https://api.mantis.com/api/shipping/guides/?project_id=789"
+```
+</CodeGroup>
+
+Retrieve a single shipping guide by ID or list all guides for a project.
+
+### Path Parameters (Single Guide)
+
+<ParamField path="guide_id" type="integer">
+  Shipping guide ID
+</ParamField>
+
+### Query Parameters (List)
+
+<ParamField query="project_id" type="integer" required>
+  Project ID to filter guides
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if query was successful
+</ResponseField>
+
+<ResponseField name="data" type="object" or="array">
+  Single guide object or array of guide objects
+</ResponseField>
+
+---
+
+## Delete Shipping Guide
+
+<CodeGroup>
+```bash DELETE /api/shipping/guides/{guide_id}/delete/
+curl -X DELETE https://api.mantis.com/api/shipping/guides/456/delete/
+```
+</CodeGroup>
+
+Soft delete a shipping guide. The guide is marked as deleted but not permanently removed.
+
+### Path Parameters
+
+<ParamField path="pk" type="integer" required>
+  Shipping guide ID to delete
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if deletion was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message
+</ResponseField>
+
+---
+
+## Shipping Guide Object
+
+<ResponseField name="id" type="integer">
+  Shipping guide ID
+</ResponseField>
+
+<ResponseField name="project_id" type="integer">
+  Associated project ID
+</ResponseField>
+
+<ResponseField name="project_name" type="string">
+  Project name
+</ResponseField>
+
+<ResponseField name="type_shipping_guide" type="string">
+  Guide type code (`EXIT` or `ENTRY`)
+</ResponseField>
+
+<ResponseField name="type_shipping_guide_display" type="string">
+  Human-readable guide type
+</ResponseField>
+
+<ResponseField name="guide_number" type="string">
+  Unique guide number
+</ResponseField>
+
+<ResponseField name="issue_date" type="string">
+  Issue date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="start_date" type="string" nullable>
+  Transport start date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="end_date" type="string" nullable>
+  Transport end date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="origin_place" type="string">
+  Origin location
+</ResponseField>
+
+<ResponseField name="destination_place" type="string">
+  Destination location
+</ResponseField>
+
+<ResponseField name="carrier_name" type="string">
+  Carrier name
+</ResponseField>
+
+<ResponseField name="carrier_ci" type="string">
+  Carrier ID
+</ResponseField>
+
+<ResponseField name="vehicle_plate" type="string">
+  Vehicle plate number
+</ResponseField>
+
+<ResponseField name="dispatcher_name" type="string">
+  Dispatcher name
+</ResponseField>
+
+<ResponseField name="dispatcher_ci" type="string">
+  Dispatcher ID
+</ResponseField>
+
+<ResponseField name="contact_name" type="string">
+  Contact name
+</ResponseField>
+
+<ResponseField name="contact_phone" type="string">
+  Contact phone
+</ResponseField>
+
+<ResponseField name="recibed_by" type="string">
+  Receiver name
+</ResponseField>
+
+<ResponseField name="recibed_ci" type="string">
+  Receiver ID
+</ResponseField>
+
+<ResponseField name="notes" type="string">
+  Additional notes
+</ResponseField>
+
+<ResponseField name="reason_transport" type="string">
+  Transport reason code
+</ResponseField>
+
+<ResponseField name="reason_transport_display" type="string">
+  Human-readable transport reason
+</ResponseField>
+
+<ResponseField name="cost_transport" type="number">
+  Transport cost
+</ResponseField>
+
+<ResponseField name="sheet_project_logistics_concept" type="string">
+  Logistics accounting concept
+</ResponseField>
+
+<ResponseField name="cost_stowage" type="number">
+  Stowage cost
+</ResponseField>
+
+<ResponseField name="sheet_project_stowage_concept" type="string">
+  Stowage accounting concept
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status (`DRAFT`, `CLOSED`, `VOID`)
+</ResponseField>
+
+<ResponseField name="status_display" type="string">
+  Human-readable status
+</ResponseField>
+
+<ResponseField name="shipping_guide_file" type="string" nullable>
+  URL to uploaded guide file
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  Creation timestamp (ISO 8601)
+</ResponseField>
+
+<ResponseField name="details" type="array">
+  Array of shipping guide detail items
+  <ResponseField name="id" type="integer">
+    Detail ID
+  </ResponseField>
+  <ResponseField name="description" type="string">
+    Item description
+  </ResponseField>
+  <ResponseField name="quantity" type="number">
+    Item quantity
+  </ResponseField>
+  <ResponseField name="unit" type="string">
+    Unit of measurement
+  </ResponseField>
+  <ResponseField name="id_resource_item" type="integer" nullable>
+    Associated resource item ID
+  </ResponseField>
+  <ResponseField name="resource_item_code" type="string" nullable>
+    Resource item code
+  </ResponseField>
+  <ResponseField name="resource_item_name" type="string" nullable>
+    Resource item name
+  </ResponseField>
+  <ResponseField name="type_equipment" type="string" nullable>
+    Equipment type code
+  </ResponseField>
+  <ResponseField name="type_equipment_display" type="string" nullable>
+    Human-readable equipment type
+  </ResponseField>
+</ResponseField>
+
+---
+
+## Workflow Example
+
+### 1. Create Draft Guide
+
+```bash
+curl -X POST https://api.mantis.com/api/shipping/guides/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": 789,
+    "issue_date": "2026-03-15",
+    "type_shipping_guide": "EXIT",
+    "origin_place": "Warehouse",
+    "destination_place": "Field Site",
+    "carrier_name": "Transport Co.",
+    "vehicle_plate": "XYZ-789"
+  }'
+```
+
+### 2. Add/Update Details
+
+```bash
+curl -X PUT https://api.mantis.com/api/shipping/guides/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 456,
+    "details": [
+      {"description": "Equipment A", "quantity": 5, "unit": "units"},
+      {"description": "Equipment B", "quantity": 3, "unit": "units"}
+    ]
+  }'
+```
+
+### 3. Close Guide
+
+```bash
+curl -X PATCH https://api.mantis.com/api/shipping/guides/ \
+  -H "Content-Type: application/json" \
+  -d '{"id": 456, "status": "CLOSED"}'
+```
+
+### 4. Upload PDF
+
+```bash
+curl -X POST https://api.mantis.com/api/load_files/ \
+  -F "model_type=shipping_guide" \
+  -F "object_id=456" \
+  -F "field_name=shipping_guide_file" \
+  -F "file=@guide.pdf"
+```

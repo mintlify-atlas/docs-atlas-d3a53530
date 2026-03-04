@@ -1,0 +1,503 @@
+---
+title: 'Resources'
+description: 'API endpoints for managing equipment resources and their status'
+---
+
+## Overview
+
+The Resources API provides endpoints for updating equipment resources including sanitary facilities, treatment plants, and storage tanks. Resources can be tracked for availability, operational status, and project assignments.
+
+## Update Resource
+
+### Update Resource Equipment
+
+```bash POST /api/resources/update/
+curl -X POST https://api.mantis.com/api/resources/update/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 1,
+    "stst_status_equipment": "FUNCIONANDO",
+    "stst_status_disponibility": "RENTADO",
+    "stst_current_location": "Project Site A",
+    "have_soap_dispenser": true,
+    "have_paper_dispenser": true
+  }'
+```
+
+Updates resource equipment fields including status, availability, location, and component checklist items.
+
+#### Request Body
+
+<ParamField body="id" type="integer" required>
+  ID of the resource to update
+</ParamField>
+
+<ParamField body="name" type="string">
+  Equipment/Service name
+</ParamField>
+
+<ParamField body="code" type="string">
+  Equipment/Service code (unique)
+</ParamField>
+
+<ParamField body="type_equipment" type="string">
+  Equipment subtype. Valid options:
+  - `SERVIC` - Service
+  - `LVMNOS` - Handwashing station
+  - `BTSNHM` - Men's sanitary battery
+  - `BTSNMJ` - Women's sanitary battery
+  - `EST4UR` - Quadruple urinal station
+  - `CMPRBN` - Bathroom camper
+  - `PTRTAP` - Potable water treatment plant
+  - `PTRTAR` - Wastewater treatment plant
+  - `TNQAAC` - Raw water storage tank
+  - `TNQAAR` - Wastewater storage tank
+</ParamField>
+
+<ParamField body="stst_status_equipment" type="string">
+  Equipment operational status:
+  - `FUNCIONANDO` - Working
+  - `DAÑADO` - Damaged
+  - `INCOMPLETO` - Incomplete
+  - `EN REPARACION` - Under repair
+</ParamField>
+
+<ParamField body="stst_status_disponibility" type="string">
+  Equipment availability status:
+  - `DISPONIBLE` - Available
+  - `RENTADO` - Rented
+</ParamField>
+
+<ParamField body="stst_current_location" type="string">
+  Current physical location of the equipment
+</ParamField>
+
+<ParamField body="stst_current_project_id" type="integer">
+  ID of the project the equipment is currently assigned to
+</ParamField>
+
+<ParamField body="stst_commitment_date" type="string">
+  Date when equipment was assigned (format: `YYYY-MM-DD`)
+</ParamField>
+
+<ParamField body="stst_release_date" type="string">
+  Date when equipment will be released (format: `YYYY-MM-DD`)
+</ParamField>
+
+<ParamField body="stst_repair_reason" type="string">
+  Reason for repair (required when status is "EN REPARACION")
+</ParamField>
+
+### Equipment Specifications
+
+<ParamField body="brand" type="string">
+  Equipment brand
+</ParamField>
+
+<ParamField body="model" type="string">
+  Equipment model
+</ParamField>
+
+<ParamField body="serial_number" type="string">
+  Serial number
+</ParamField>
+
+<ParamField body="date_purchase" type="string">
+  Purchase date (format: `YYYY-MM-DD`)
+</ParamField>
+
+<ParamField body="height" type="integer">
+  Height in centimeters
+</ParamField>
+
+<ParamField body="width" type="integer">
+  Width in centimeters
+</ParamField>
+
+<ParamField body="depth" type="integer">
+  Depth in centimeters
+</ParamField>
+
+<ParamField body="weight" type="integer">
+  Weight in kilograms
+</ParamField>
+
+<ParamField body="capacity_gallons" type="number">
+  Capacity in gallons
+</ParamField>
+
+### Component Checklist (Boolean Fields)
+
+These fields track whether specific components are present. When updating checklist fields without explicitly setting `stst_status_equipment`, the status will automatically update to `FUNCIONANDO` if all applicable checklist items are true, or `INCOMPLETO` if any are false.
+
+#### Sanitary Equipment Components
+
+<ParamField body="have_foot_pumps" type="boolean">
+  Foot pedal pumps (for handwashing stations)
+</ParamField>
+
+<ParamField body="have_soap_dispenser" type="boolean">
+  Soap dispenser
+</ParamField>
+
+<ParamField body="have_paper_dispenser" type="boolean">
+  Paper dispenser
+</ParamField>
+
+<ParamField body="have_napkin_dispenser" type="boolean">
+  Napkin dispenser
+</ParamField>
+
+<ParamField body="have_paper_towels" type="boolean">
+  Paper towels
+</ParamField>
+
+<ParamField body="have_urinals" type="boolean">
+  Urinals (for men's sanitary batteries)
+</ParamField>
+
+<ParamField body="have_seat" type="boolean">
+  Toilet seat
+</ParamField>
+
+<ParamField body="have_toilet_pump" type="boolean">
+  Toilet pump
+</ParamField>
+
+<ParamField body="have_sink_pump" type="boolean">
+  Sink pump
+</ParamField>
+
+<ParamField body="have_toilet_lid" type="boolean">
+  Toilet lid/valve
+</ParamField>
+
+<ParamField body="have_bathroom_bases" type="boolean">
+  Bathroom bases
+</ParamField>
+
+<ParamField body="have_ventilation_pipe" type="boolean">
+  Ventilation pipe
+</ParamField>
+
+#### Treatment Plant Components
+
+<ParamField body="have_blower_brand" type="boolean">
+  Has blower
+</ParamField>
+
+<ParamField body="have_belt_brand" type="boolean">
+  Has belt
+</ParamField>
+
+<ParamField body="have_blower_pulley" type="boolean">
+  Has blower pulley
+</ParamField>
+
+<ParamField body="have_motor_pulley" type="boolean">
+  Has motor pulley
+</ParamField>
+
+<ParamField body="have_electrical_panel" type="boolean">
+  Has electrical panel
+</ParamField>
+
+<ParamField body="have_motor_guard" type="boolean">
+  Has motor guard
+</ParamField>
+
+<ParamField body="have_relay_engine" type="boolean">
+  Has engine relay
+</ParamField>
+
+<ParamField body="have_relay_blower" type="boolean">
+  Has blower relay
+</ParamField>
+
+<ParamField body="have_engine" type="boolean">
+  Has motor
+</ParamField>
+
+<ParamField body="have_engine_guard" type="boolean">
+  Has motor guard
+</ParamField>
+
+#### Potable Water Plant Components
+
+<ParamField body="have_uv_filter" type="boolean">
+  Has UV filter
+</ParamField>
+
+<ParamField body="have_pump_filter" type="boolean">
+  Has filtration pump
+</ParamField>
+
+<ParamField body="have_pump_dosing" type="boolean">
+  Has dosing pump
+</ParamField>
+
+<ParamField body="have_pump_pressure" type="boolean">
+  Has pressure pump
+</ParamField>
+
+<ParamField body="have_hidroneumatic_tank" type="boolean">
+  Has hydropneumatic tank
+</ParamField>
+
+<ParamField body="have_sand_carbon_filter" type="boolean">
+  Has sand and carbon filter
+</ParamField>
+
+### Treatment Plant Details
+
+<ParamField body="engine_fases" type="string">
+  Motor phases: `1`, `2`, or `3`
+</ParamField>
+
+<ParamField body="blower_brand" type="string">
+  Blower brand
+</ParamField>
+
+<ParamField body="blower_model" type="string">
+  Blower model
+</ParamField>
+
+<ParamField body="engine_brand" type="string">
+  Motor brand
+</ParamField>
+
+<ParamField body="engine_model" type="string">
+  Motor model
+</ParamField>
+
+<ParamField body="belt_brand" type="string">
+  Belt brand
+</ParamField>
+
+<ParamField body="belt_model" type="string">
+  Belt model
+</ParamField>
+
+<ParamField body="belt_type" type="string">
+  Belt type: `A` or `B`
+</ParamField>
+
+<ParamField body="electrical_panel_brand" type="string">
+  Electrical panel brand
+</ParamField>
+
+<ParamField body="relay_engine" type="string">
+  Engine relay brand
+</ParamField>
+
+<ParamField body="relay_blower" type="string">
+  Blower relay brand
+</ParamField>
+
+<ParamField body="pump_filter" type="string">
+  Filtration pump specification
+</ParamField>
+
+<ParamField body="pump_pressure" type="string">
+  Pressure pump specification
+</ParamField>
+
+<ParamField body="pump_dosing" type="string">
+  Dosing pump specification
+</ParamField>
+
+<ParamField body="uv_filter" type="string">
+  UV filter specification
+</ParamField>
+
+<ParamField body="sand_carbon_filter" type="string">
+  Sand and carbon filter specification
+</ParamField>
+
+<ParamField body="hidroneumatic_tank" type="string">
+  Hydropneumatic tank specification
+</ParamField>
+
+#### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the operation was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Success or error message
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <ResponseField name="id" type="integer">
+    Resource ID
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Equipment/Service name
+  </ResponseField>
+  
+  <ResponseField name="code" type="string">
+    Equipment/Service code
+  </ResponseField>
+  
+  <ResponseField name="type_equipment" type="string">
+    Equipment subtype code
+  </ResponseField>
+  
+  <ResponseField name="is_active" type="boolean">
+    Whether the resource is active
+  </ResponseField>
+  
+  <ResponseField name="stst_status_equipment" type="string">
+    Current operational status
+  </ResponseField>
+  
+  <ResponseField name="created_at" type="string">
+    Creation timestamp
+  </ResponseField>
+  
+  <ResponseField name="updated_at" type="string">
+    Last update timestamp
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="ignored_fields" type="array">
+  List of field names that were sent but do not exist on the model (informational)
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "success": true,
+  "message": "Equipo actualizado correctamente",
+  "data": {
+    "id": 1,
+    "name": "Handwashing Station #5",
+    "code": "LVMNOS-005",
+    "type_equipment": "LVMNOS",
+    "is_active": true,
+    "stst_status_equipment": "FUNCIONANDO",
+    "created_at": "2023-01-01T00:00:00Z",
+    "updated_at": "2024-01-15T14:30:00Z"
+  },
+  "ignored_fields": null
+}
+```
+</ResponseExample>
+
+## ResourceItem Model
+
+The ResourceItem model represents equipment and service resources with the following key characteristics:
+
+### Equipment Types
+
+Resources are categorized by type with specific field sets for each:
+
+- **SERVIC** - Generic service (minimal fields)
+- **LVMNOS** - Handwashing stations with foot pumps and dispensers
+- **BTSNHM** - Men's sanitary batteries with urinals
+- **BTSNMJ** - Women's sanitary batteries
+- **EST4UR** - Quadruple urinal stations
+- **CMPRBN** - Bathroom campers
+- **PTRTAP** - Potable water treatment plants with filtration systems
+- **PTRTAR** - Wastewater treatment plants with aeration systems
+- **TNQAAC** - Raw water storage tanks
+- **TNQAAR** - Wastewater storage tanks
+
+### Status Values
+
+#### Equipment Status (`stst_status_equipment`)
+- **FUNCIONANDO** - Equipment is working properly
+- **DAÑADO** - Equipment is damaged
+- **INCOMPLETO** - Equipment is incomplete (missing components)
+- **EN REPARACION** - Equipment is under repair
+
+#### Availability Status (`stst_status_disponibility`)
+- **DISPONIBLE** - Available for assignment
+- **RENTADO** - Currently rented/assigned to a project
+
+### Availability Tracking
+
+Resources track their assignment status with:
+- `stst_current_location` - Physical location
+- `stst_current_project_id` - Project assignment
+- `stst_commitment_date` - When assigned
+- `stst_release_date` - When available again
+
+### Automatic Status Updates
+
+When updating checklist fields (fields starting with `have_`):
+- If all applicable checklist items are checked, status automatically becomes `FUNCIONANDO`
+- If any checklist items are unchecked, status automatically becomes `INCOMPLETO`
+- This behavior is skipped if you explicitly set `stst_status_equipment` in the request
+
+### Field Validation
+
+- Date fields accept format: `YYYY-MM-DD`
+- DateTime fields accept formats: `YYYY-MM-DD HH:MM:SS`, `YYYY-MM-DDTHH:MM:SS`, or `YYYY-MM-DD`
+- Unknown fields are ignored and listed in `ignored_fields` response
+- The `id` field is required for all update operations
+
+## Error Responses
+
+<ResponseExample>
+```json 400 Bad Request - Missing ID
+{
+  "success": false,
+  "error": "El campo id es requerido"
+}
+```
+
+```json 400 Bad Request - Invalid JSON
+{
+  "success": false,
+  "error": "JSON inválido"
+}
+```
+
+```json 400 Bad Request - Validation Errors
+{
+  "success": false,
+  "error": "Errores de validación en campos",
+  "field_errors": {
+    "date_purchase": "Formato de fecha inválido. Use YYYY-MM-DD",
+    "capacity_gallons": "Value must be a number"
+  },
+  "ignored_fields": ["nonexistent_field"]
+}
+```
+
+```json 404 Not Found
+{
+  "success": false,
+  "error": "No ResourceItem matches the given query."
+}
+```
+
+```json 500 Internal Server Error
+{
+  "success": false,
+  "error": "Error interno del servidor"
+}
+```
+</ResponseExample>
+
+## Best Practices
+
+1. **Checklist Management**: When updating equipment components, update all relevant `have_*` fields together to ensure accurate status calculation.
+
+2. **Status Override**: If you need to manually set equipment status regardless of checklist state, explicitly include `stst_status_equipment` in your request.
+
+3. **Date Formats**: Always use `YYYY-MM-DD` format for dates to avoid validation errors.
+
+4. **Field Validation**: Check the `ignored_fields` array in responses to catch typos or invalid field names.
+
+5. **Type-Specific Fields**: Only send fields relevant to the equipment type. Fields not applicable to a type are safely ignored.
+
+6. **Project Assignment**: When assigning equipment to a project, update all availability fields together:
+   - `stst_status_disponibility` = "RENTADO"
+   - `stst_current_project_id` = project ID
+   - `stst_current_location` = project location
+   - `stst_commitment_date` = assignment date
+   - `stst_release_date` = expected return date

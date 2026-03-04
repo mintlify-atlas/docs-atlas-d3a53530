@@ -1,0 +1,461 @@
+---
+title: Maintenance Management
+description: Schedule, track, and document equipment maintenance operations
+icon: wrench
+---
+
+## Overview
+
+The Maintenance module tracks preventive and corrective maintenance performed on equipment deployed at project sites. Each maintenance operation generates a SheetMaintenance record that documents the work performed, parts replaced, and costs incurred.
+
+## SheetMaintenance Model
+
+### Core Purpose
+
+A maintenance sheet documents a single maintenance intervention:
+- **Preventive**: Scheduled maintenance based on frequency settings
+- **Corrective**: Repairs triggered by equipment failures
+
+```python
+class SheetMaintenance(BaseModel):
+    id = AutoField(primary_key=True)
+    id_sheet_project = ForeignKey(SheetProject, on_delete=PROTECT)
+    sheet_number = PositiveBigIntegerField(unique=True)  # Auto-generated
+    status = CharField(
+        choices=[
+            ('DRAFT', 'BORRADOR'),
+            ('CLOSED', 'EN PLANILLA'),
+            ('VOID', 'ANULADO')
+        ],
+        default='DRAFT'
+    )
+    maintenance_type = CharField(
+        choices=[
+            ('PREVENTIVO', 'PREVENTIVO'),
+            ('CORRECTIVO', 'CORRECTIVO')
+        ],
+        default='PREVENTIVO'
+    )
+    resource_item = ForeignKey(ResourceItem, on_delete=PROTECT)
+    responsible_technical = ForeignKey(Technical, on_delete=PROTECT)
+```
+
+### Sheet Numbering
+
+Maintenance sheets use automatic global sequential numbering:
+
+```python
+# Auto-generated on save
+sheet_number = 1, 2, 3, 4...  # Never resets
+```
+
+<Note>
+  Unlike custody chains (which use 7-digit strings), maintenance sheet numbers are plain integers that increment globally across all projects.
+</Note>
+
+## Maintenance Types
+
+### Preventive Maintenance
+
+<Card title="PREVENTIVO" icon="calendar-check">
+  Scheduled maintenance based on ProjectResourceItem frequency settings:
+  - **DAY**: Every N days (interval_days)
+  - **WEEK**: Specific weekdays (weekdays)
+  - **MONTH**: Specific month days (monthdays)
+</Card>
+
+**Frequency Examples:**
+
+```python
+# Daily interval: Maintenance every 2 days
+frequency_type = 'DAY'
+interval_days = 2
+
+# Weekly schedule: Monday, Wednesday, Friday
+frequency_type = 'WEEK'
+weekdays = [0, 2, 4]  # 0=Monday, 6=Sunday
+
+# Monthly schedule: 1st and 15th of month
+frequency_type = 'MONTH'
+monthdays = [1, 15]
+```
+
+### Corrective Maintenance
+
+<Card title="CORRECTIVO" icon="wrench">
+  Unscheduled repairs triggered by:
+  - Equipment failures
+  - Damage reports
+  - Client requests
+  - Safety issues
+</Card>
+
+## Maintenance Details
+
+### Work Information
+
+```python
+requested_by = CharField(max_length=255)  # Who requested the maintenance
+rig = CharField(max_length=50)  # RIG identifier at client site
+code = CharField(max_length=100)  # Equipment code
+location = CharField(max_length=255)  # Specific location
+start_date = DateField()
+end_date = DateField()
+total_days = PositiveIntegerField()  # Duration in days
+```
+
+### Cost Tracking
+
+```python
+cost_day = DecimalField(max_digits=10, decimal_places=2)  # Daily rate
+cost_total = DecimalField(max_digits=10, decimal_places=2)  # Total cost
+cost_logistics = DecimalField(max_digits=10, decimal_places=2)  # Transport cost
+```
+
+**Cost Calculation:**
+```python
+cost_total = total_days * cost_day
+# Logistics cost is added separately
+```
+
+### Work Order Integration
+
+Maintenance sheets are linked to work orders for billing:
+
+```python
+sheet_project_maintenance_concept = CharField(
+    max_length=255,
+    default="SERVICIO TÉCNICO ESPECIALIZADO"
+)
+sheet_project_logistics_concept = CharField(
+    max_length=255,
+    default=None
+)
+```
+
+These concepts appear as line items in the SheetProject when the maintenance is billed.
+
+## Technical Documentation
+
+### Maintenance Description
+
+<AccordionGroup>
+  <Accordion title="Work Performed">
+    ```python
+    maintenance_description = TextField()
+    ```
+    Detailed description of maintenance activities performed.
+  </Accordion>
+  
+  <Accordion title="Fault Description">
+    ```python
+    fault_description = TextField()
+    ```
+    Description of the problem or failure (for corrective maintenance).
+  </Accordion>
+  
+  <Accordion title="Possible Causes">
+    ```python
+    possible_causes = TextField()
+    ```
+    Technical analysis of what caused the failure.
+  </Accordion>
+  
+  <Accordion title="Replaced Parts">
+    ```python
+    replaced_parts = TextField()
+    ```
+    List of parts and accessories replaced during maintenance.
+  </Accordion>
+  
+  <Accordion title="Observations">
+    ```python
+    observations = TextField()
+    ```
+    Additional notes and recommendations for future maintenance.
+  </Accordion>
+</AccordionGroup>
+
+## Approval and Signatures
+
+### Responsible Parties
+
+```python
+# Technical staff who performed the work
+performed_by = CharField(max_length=255)
+performed_by_position = CharField(max_length=255)
+
+# Supervisor who approved the work
+approved_by = CharField(max_length=255)
+approved_by_position = CharField(max_length=255)
+```
+
+<Warning>
+  While the system tracks the assigned `responsible_technical`, the `performed_by` and `approved_by` fields record the actual names for the maintenance report document.
+</Warning>
+
+## Maintenance Lifecycle
+
+<Steps>
+  <Step title="DRAFT">
+    Maintenance sheet is being prepared:
+    - Record equipment and location
+    - Assign responsible technical
+    - Document maintenance activities
+    - Record parts used and costs
+  </Step>
+  <Step title="CLOSED (EN PLANILLA)">
+    Work is complete and ready for billing:
+    - All documentation finalized
+    - Signatures obtained
+    - Costs calculated
+    - Added to work order (SheetProject)
+  </Step>
+  <Step title="VOID (ANULADO)">
+    Maintenance was cancelled or voided:
+    - Not included in billing
+    - Archived for records
+  </Step>
+</Steps>
+
+## Document Attachment
+
+Attach the completed maintenance report PDF:
+
+```python
+maintenance_file = FileField(
+    upload_to='projects/maintenance_sheets/',
+    validators=[validate_pdf_file]
+)
+```
+
+## Code Examples
+
+### Creating a Preventive Maintenance Sheet
+
+```python
+from projects.models import SheetMaintenance, SheetProject
+from equipment.models import ResourceItem
+from accounts.models import Technical
+from datetime import date
+
+# Create preventive maintenance
+maintenance = SheetMaintenance.objects.create(
+    id_sheet_project=sheet_project,
+    # sheet_number is auto-generated
+    maintenance_type='PREVENTIVO',
+    resource_item=resource,
+    responsible_technical=technical,
+    requested_by='Supervisor de Campo',
+    rig='RIG-45',
+    code='BT-001',
+    location='Campamento Norte',
+    start_date=date(2026, 3, 15),
+    end_date=date(2026, 3, 15),
+    total_days=1,
+    cost_day=150.00,
+    cost_total=150.00,
+    maintenance_description='''Mantenimiento preventivo:
+        - Limpieza de tanques
+        - Revisión de bombas
+        - Lubricación de componentes
+        - Inspección de mangueras y conexiones''',
+    replaced_parts='Ninguno',
+    observations='Equipo en buen estado. Próxima revisión en 7 días.',
+    performed_by='Juan Técnico',
+    performed_by_position='Técnico de Mantenimiento',
+    approved_by='Carlos Supervisor',
+    approved_by_position='Jefe de Operaciones'
+)
+```
+
+### Creating a Corrective Maintenance Sheet
+
+```python
+# Create corrective maintenance
+maintenance = SheetMaintenance.objects.create(
+    id_sheet_project=sheet_project,
+    maintenance_type='CORRECTIVO',
+    resource_item=resource,
+    responsible_technical=technical,
+    requested_by='Cliente - Emergencia',
+    rig='RIG-23',
+    code='PTRTAR-005',
+    location='Campamento Sur',
+    start_date=date(2026, 3, 18),
+    end_date=date(2026, 3, 19),
+    total_days=2,
+    cost_day=200.00,
+    cost_total=400.00,
+    cost_logistics=100.00,
+    fault_description='Motor del blower no arranca. Sin funcionamiento de aireación.',
+    possible_causes='''- Falla eléctrica en relay del motor
+        - Daño en el motor eléctrico
+        - Problema en panel de control''',
+    maintenance_description='''Reparación realizada:
+        - Diagnóstico eléctrico completo
+        - Reemplazo de relay del motor
+        - Pruebas de funcionamiento
+        - Ajustes finales''',
+    replaced_parts='''- Relay del motor (marca Schneider, ref. LRD10)
+        - Fusibles 10A (cantidad: 3)''',
+    observations='Motor funcionando correctamente. Se recomienda revisión del panel de control en 30 días.',
+    performed_by='Pedro Electricista',
+    performed_by_position='Técnico Eléctrico',
+    approved_by='María Ingeniera',
+    approved_by_position='Ingeniera de Mantenimiento'
+)
+```
+
+### Closing Maintenance for Billing
+
+```python
+# Finalize maintenance
+maintenance.status = 'CLOSED'
+maintenance.save()
+
+# It will now appear in the SheetProject for billing
+# The cost_total + cost_logistics will be added as line items
+```
+
+### Querying Maintenance History
+
+```python
+# Get all maintenance for an equipment item
+history = SheetMaintenance.objects.filter(
+    resource_item=resource,
+    status='CLOSED',
+    is_active=True
+).order_by('-start_date')
+
+# Get pending maintenance
+pending = SheetMaintenance.objects.filter(
+    status='DRAFT',
+    id_sheet_project__project=project
+)
+
+# Get maintenance by type
+preventive = SheetMaintenance.objects.filter(
+    maintenance_type='PREVENTIVO',
+    start_date__gte=date(2026, 1, 1)
+)
+
+corrective = SheetMaintenance.objects.filter(
+    maintenance_type='CORRECTIVO',
+    start_date__gte=date(2026, 1, 1)
+)
+```
+
+## Scheduling Integration
+
+### How Frequency Works
+
+Maintenance frequency is defined at the `ProjectResourceItem` level:
+
+```python
+from projects.models import ProjectResourceItem
+
+# Get resources due for maintenance
+resources = ProjectResourceItem.objects.filter(
+    project=project,
+    is_retired=False,
+    operation_start_date__lte=today,
+    operation_end_date__gte=today
+)
+
+# Check each resource's frequency
+for resource in resources:
+    if resource.frequency_type == 'DAY':
+        # Check if interval_days has passed since last maintenance
+        pass
+    elif resource.frequency_type == 'WEEK':
+        # Check if today is in weekdays list
+        if today.weekday() in resource.weekdays:
+            # Schedule maintenance
+            pass
+    elif resource.frequency_type == 'MONTH':
+        # Check if today's day is in monthdays list
+        if today.day in resource.monthdays:
+            # Schedule maintenance
+            pass
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Preventive Maintenance">
+    - Schedule based on ProjectResourceItem frequency settings
+    - Create maintenance sheets 1 day in advance
+    - Complete work on scheduled date when possible
+    - Document all activities even if minimal work performed
+  </Accordion>
+  
+  <Accordion title="Corrective Maintenance">
+    - Create DRAFT immediately when failure reported
+    - Assign qualified technical staff
+    - Document fault description thoroughly
+    - Take photos of damage (link in observations)
+    - List all parts replaced with part numbers
+  </Accordion>
+  
+  <Accordion title="Cost Management">
+    - Use consistent daily rates across projects
+    - Include logistics costs when transportation required
+    - Track parts costs separately in replaced_parts field
+    - Verify total_days calculation matches date range
+  </Accordion>
+  
+  <Accordion title="Documentation">
+    - Write detailed maintenance descriptions
+    - Include observations for future maintenance planning
+    - Attach photos as PDF appendix if significant repairs
+    - Get both performed_by and approved_by signatures
+  </Accordion>
+</AccordionGroup>
+
+## Reporting and Analytics
+
+### Maintenance Metrics
+
+```python
+from django.db.models import Count, Sum, Avg
+from datetime import timedelta
+
+# Count maintenance by type
+stats = SheetMaintenance.objects.filter(
+    id_sheet_project__project=project,
+    status='CLOSED'
+).values('maintenance_type').annotate(
+    count=Count('id'),
+    total_cost=Sum('cost_total')
+)
+
+# Average maintenance duration
+avg_duration = SheetMaintenance.objects.filter(
+    status='CLOSED'
+).aggregate(Avg('total_days'))
+
+# Most maintained equipment
+top_equipment = SheetMaintenance.objects.filter(
+    status='CLOSED'
+).values('resource_item__name').annotate(
+    maintenance_count=Count('id')
+).order_by('-maintenance_count')[:10]
+```
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Projects" icon="folder-open" href="/features/projects">
+    ProjectResourceItem defines maintenance frequency
+  </Card>
+  <Card title="Equipment" icon="toolbox" href="/features/equipment">
+    Track maintenance history by equipment
+  </Card>
+  <Card title="Work Orders" icon="clipboard-list" href="/features/work-orders">
+    Maintenance costs included in work orders
+  </Card>
+  <Card title="Reports" icon="file-pdf" href="/features/reports">
+    Generate maintenance sheet PDFs
+  </Card>
+</CardGroup>

@@ -1,0 +1,355 @@
+---
+title: 'Document Merge'
+description: 'Generate merged PDF documents from multiple sources'
+---
+
+# Document Merge API
+
+Generate combined PDF documents by merging multiple files and system-generated reports. Uses Playwright for HTML-to-PDF conversion and pypdf for PDF merging.
+
+## Merge Project Documents
+
+<CodeGroup>
+```bash GET (All Documents)
+curl -X GET "https://api.mantis.com/api/load_files/project/789/merge/"
+```
+
+```bash GET (Custody Chains Only)
+curl -X GET "https://api.mantis.com/api/load_files/project/789/merge/?scope=custody_chains"
+```
+
+```bash GET (Specific Sheet)
+curl -X GET "https://api.mantis.com/api/load_files/project/789/merge/?scope=custody_chains&sheet_id=456"
+```
+</CodeGroup>
+
+Generate a merged PDF containing all documents for a project or a filtered subset.
+
+### Path Parameters
+
+<ParamField path="project_id" type="integer" required>
+  Project ID
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="scope" type="string">
+  Filter which documents to include. Options:
+  - `all` (default) - All project documents
+  - `custody_chains` - Only custody chain documents
+  - `sheet_files` - Only work sheet files
+  - `shipping_guides` - Only shipping guide files
+</ParamField>
+
+<ParamField query="sheet_id" type="integer">
+  Filter to documents from a specific work sheet (optional)
+</ParamField>
+
+### Response
+
+Returns a PDF file for download with `Content-Type: application/pdf`.
+
+Filename format: `Documentos_{partner_name}_{scope}.pdf`
+
+### Document Order
+
+1. **Sheet Files** (if included):
+   - Sheet project file
+   - Certificate of final disposition
+   - Invoice file
+
+2. **Custody Chains** (if included):
+   - Ordered by activity date and consecutive number
+
+3. **Shipping Guides** (if included):
+   - Ordered by issue date
+
+### Error Response
+
+<ResponseField name="success" type="boolean">
+  Always false on error
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "success": false,
+  "error": "No hay archivos PDF para combinar en el alcance seleccionado."
+}
+```
+</ResponseExample>
+
+---
+
+## Merge Work Sheet Documents
+
+<CodeGroup>
+```bash GET /api/load_files/sheet/{sheet_id}/merge-generated/
+curl -X GET https://api.mantis.com/api/load_files/sheet/456/merge-generated/
+```
+</CodeGroup>
+
+Generate a comprehensive PDF for a work sheet including both system-generated reports and uploaded documents.
+
+### Path Parameters
+
+<ParamField path="sheet_id" type="integer" required>
+  Work sheet ID
+</ParamField>
+
+### Response
+
+Returns a merged PDF file for download.
+
+Filename format: `Merge_{series_code}_{partner_name}.pdf`
+
+### Document Composition
+
+Documents are merged in this exact order:
+
+1. **Work Sheet Report** (system-generated, landscape)
+   - Quantities and materials worksheet
+   - Generated from `/workorders/worksheet/{id}/` template
+
+2. **Final Disposition Certificate** (system-generated, portrait)
+   - Certificate of final disposition
+   - Generated from `/workorders/final-disposition-certificate/{id}/` template
+
+3. **Invoice File** (uploaded)
+   - Sales invoice PDF (if attached)
+
+4. **Custody Chain Documents** (system-generated)
+   - All custody chains for this sheet
+   - Ordered by activity date and consecutive number
+   - Generated from `/workorders/custody-chain-report/{id}/` template
+
+### Technical Implementation
+
+- Uses Playwright with Chromium to render HTML templates as PDFs
+- Renders in headless mode with proper wait for network idle
+- Copies authentication cookies from the request for authorized access
+- Runs in a separate thread to avoid async event loop conflicts
+- Timeout: 120 seconds
+
+---
+
+## Merge Vehicle Documents
+
+<CodeGroup>
+```bash GET /api/load_files/vehicle/{vehicle_id}/merge-generated/
+curl -X GET https://api.mantis.com/api/load_files/vehicle/321/merge-generated/
+```
+</CodeGroup>
+
+Generate a complete vehicle documentation package including status report and all certificates.
+
+### Path Parameters
+
+<ParamField path="vehicle_id" type="integer" required>
+  Vehicle ID
+</ParamField>
+
+### Response
+
+Returns a merged PDF file for download.
+
+Filename format: `Documentos-Vehiculo-{plate}-{YYYYMMDD}.pdf`
+
+### Document Composition
+
+1. **Vehicle Status Report** (system-generated, portrait)
+   - Generated from `/vehicles/{id}/status-report/` template
+
+2. **Insurance Policy** (uploaded)
+   - Póliza de Seguro PDF
+
+3. **Vehicle Registration** (uploaded)
+   - Matrícula PDF
+
+4. **Technical Inspection** (uploaded)
+   - Revisión Técnica PDF
+
+5. **Technical Certifications** (uploaded)
+   - All certification documents
+   - Ordered by certification name
+
+6. **Access Passes** (uploaded)
+   - All block/facility passes
+   - Ordered by block name
+
+---
+
+## Merge Technical Staff Documents
+
+<CodeGroup>
+```bash GET /api/load_files/technical/{technical_id}/merge-generated/
+curl -X GET https://api.mantis.com/api/load_files/technical/123/merge-generated/
+```
+</CodeGroup>
+
+Generate a complete technical staff documentation package including profile reports and all certificates.
+
+### Path Parameters
+
+<ParamField path="technical_id" type="integer" required>
+  Technical staff ID
+</ParamField>
+
+### Response
+
+Returns a merged PDF file for download.
+
+Filename format: `Documentos-Tecnico-{dni}-{name}-{YYYYMMDD}.pdf`
+
+### Document Composition
+
+1. **Technical Information Report** (system-generated, portrait)
+   - General technical profile and certifications
+   - Generated from `/technicals/{id}/information-report/` template
+
+2. **Vaccination Report** (system-generated, portrait)
+   - Complete vaccination history
+   - Generated from `/technicals/{id}/vaccine-report/` template
+
+3. **National ID** (uploaded)
+   - Cédula PDF
+
+4. **Driver's License** (uploaded)
+   - License PDF
+
+5. **Vaccination Certificate** (uploaded)
+   - General vaccination certificate PDF
+
+6. **Technical Passes** (uploaded)
+   - All block/facility access passes
+   - Ordered by block name
+
+7. **Individual Vaccination Records** (uploaded)
+   - Specific vaccine administration records
+   - Ordered by application date
+
+---
+
+## PDF Merging Process
+
+### System-Generated PDFs
+
+1. **HTML Rendering**
+   - Django templates are rendered with context data
+   - Playwright navigates to the template URL
+   - Waits for `networkidle` state (all resources loaded)
+   - Generates PDF with specified format and margins
+
+2. **Default Settings**
+   - Format: A4
+   - Orientation: Portrait (landscape for worksheets)
+   - Margins: 0.5cm (1cm for certificates)
+   - Background printing: Enabled
+
+### File Handling
+
+1. **Uploaded PDFs**
+   - Read directly from file storage
+   - Validated before inclusion
+   - Corrupted files are skipped with metadata note
+
+2. **Merge Order**
+   - Documents are added to `PdfWriter` in specification order
+   - Each page from each document is appended sequentially
+
+3. **Error Handling**
+   - Individual document failures don't halt the entire process
+   - Failed documents are logged in PDF metadata
+   - Process continues with remaining documents
+
+### Authentication
+
+All merge operations preserve user authentication:
+- Cookies from the incoming request are extracted
+- Cookies are passed to Playwright browser context
+- Ensures system-generated reports respect user permissions
+
+### Performance Considerations
+
+- **Threading**: Playwright runs in a dedicated thread to avoid event loop conflicts
+- **Timeout**: 120-second maximum per merge operation
+- **Memory**: Large PDFs may require significant memory during merge
+- **Caching**: No caching - documents are generated fresh on each request
+
+---
+
+## Use Cases
+
+### Project Audit Package
+
+Generate a complete audit package for a project:
+
+```bash
+curl -X GET "https://api.mantis.com/api/load_files/project/789/merge/" \
+  -o "project_789_complete.pdf"
+```
+
+### Quality Control Review
+
+Generate custody chains only for review:
+
+```bash
+curl -X GET "https://api.mantis.com/api/load_files/project/789/merge/?scope=custody_chains&sheet_id=456" \
+  -o "sheet_456_chains.pdf"
+```
+
+### Staff Compliance Package
+
+Generate complete documentation for field deployment:
+
+```bash
+curl -X GET "https://api.mantis.com/api/load_files/technical/123/merge-generated/" \
+  -o "tech_123_complete.pdf"
+```
+
+### Vehicle Fleet Audit
+
+Generate documentation for all vehicles:
+
+```bash
+#!/bin/bash
+for vehicle_id in 1 2 3 4 5; do
+  curl -X GET "https://api.mantis.com/api/load_files/vehicle/${vehicle_id}/merge-generated/" \
+    -o "vehicle_${vehicle_id}.pdf"
+done
+```
+
+---
+
+## Error Handling
+
+### Common Errors
+
+**404 Not Found**
+```json
+{
+  "success": false,
+  "error": "Proyecto no encontrado."
+}
+```
+
+**No Documents Available**
+```json
+{
+  "success": false,
+  "error": "No se pudo generar ningún documento para esta planilla."
+}
+```
+
+**Timeout**
+- Operations that exceed 120 seconds will fail
+- Consider reducing the scope or splitting into multiple requests
+
+**Corrupted PDF**
+- Individual corrupted files are skipped
+- Metadata in resulting PDF notes skipped files
+- Operation continues with remaining documents

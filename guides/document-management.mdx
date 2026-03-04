@@ -1,0 +1,684 @@
+---
+title: 'Document Management'
+description: 'Upload, organize, and manage project documents including work sheets and custody chains'
+icon: 'file-upload'
+---
+
+# Document Management Guide
+
+Learn how to upload, organize, and manage all project documentation including work sheets, custody chains, and shipping guides in Mantis.
+
+## Overview
+
+Mantis provides a comprehensive document management system organized as a hierarchical tree structure:
+- **Work Sheets (Planillas)** → Contains sheet PDFs and custody chains
+- **Custody Chains (Cadenas de Custodia)** → Individual chain PDFs for each work order
+- **Shipping Guides (Guías de Remisión)** → Equipment transfer documentation
+
+<Info>
+All documents support PDF format. The system tracks upload status and provides merge functionality for generating consolidated reports.
+</Info>
+
+---
+
+## Document Tree Structure
+
+### Overview Panel
+
+The Documents tab displays a collapsible tree view with:
+
+**Progress Bar:**
+- Visual indicator of document completion (X/Y archivos - Z%)
+- Updates in real-time as documents are uploaded
+
+**Action Buttons:**
+- **Expandir todo**: Expand all tree nodes
+- **Colapsar todo**: Collapse all tree nodes
+- **Descargar Todo**: Download all documents merged into a single PDF
+
+### Tree Hierarchy
+
+```
+📂 Planillas de Trabajo (Work Sheets)
+  ├─ 📄 Planilla #1 - Periodo 01/03 - 15/03
+  │   ├─ ✅ PDF Planilla (uploaded)
+  │   ├─ ❌ Firma Técnico (missing)
+  │   └─ 🔗 Cadenas de Custodia
+  │       ├─ ✅ Cadena #1 - 01/03/2024
+  │       └─ ❌ Cadena #2 - 08/03/2024
+  ├─ 📄 Planilla #2 - Periodo 16/03 - 31/03
+  └─ ...
+📂 Guías de Remisión (Shipping Guides)
+  ├─ ✅ Guía #001 - 01/03/2024
+  └─ ❌ Guía #002 - 15/03/2024
+```
+
+<Note>
+- ✅ Green checkmark: File uploaded and available
+- ❌ Red X: File missing or pending upload
+- 🔵 Blue badge: File count (e.g., "3/5 archivos")
+</Note>
+
+---
+
+## Uploading Individual Documents
+
+<Steps>
+  <Step title="Navigate to Documents Tab">
+    From the project detail view, click on the **Documentos** tab.
+  </Step>
+
+  <Step title="Locate the Document Node">
+    Expand the tree to find the specific document you want to upload:
+    - Click the arrow icon to expand work sheets
+    - Work sheets contain both sheet-level documents and nested custody chains
+  </Step>
+
+  <Step title="Click Upload Button">
+    Click the **upload icon** button (blue outline) next to the document name.
+    
+    If a file already exists, the button will show as "Reemplazar" (Replace).
+  </Step>
+
+  <Step title="Select File">
+    In the upload modal:
+    - **Document name** is displayed at the top
+    - If replacing, current filename is shown
+    - Click the file input and select your PDF file
+    - Maximum file size: Check with system administrator (typically 10MB)
+  </Step>
+
+  <Step title="Confirm Upload">
+    Click **Subir** to start the upload.
+    
+    **During Upload:**
+    - Progress bar animates
+    - "Subiendo..." message displays
+    - Upload button becomes disabled
+
+    **After Upload:**
+    - Success message: "Archivo subido correctamente"
+    - Tree refreshes automatically
+    - Icon changes from ❌ to ✅
+    - Modal closes automatically after 1.2 seconds
+  </Step>
+</Steps>
+
+<Tip>
+You can view uploaded documents by clicking the **eye icon** (Ver) button. This opens the PDF in a new browser tab.
+</Tip>
+
+---
+
+## Bulk Upload: Custody Chains
+
+When you have multiple custody chain PDFs in a single document, use the bulk upload feature.
+
+### How Bulk Upload Works
+
+The system:
+1. Takes a single PDF with multiple pages
+2. Splits the PDF (one page per custody chain)
+3. Assigns each page to selected custody chains in order
+4. Saves individual PDFs for each chain
+
+### Bulk Upload Process
+
+<Steps>
+  <Step title="Open Bulk Upload Modal">
+    From the Documents tab, locate a work sheet with custody chains.
+    
+    Click the **Masiva** button (accent color) next to the work sheet name.
+  </Step>
+
+  <Step title="Select Custody Chains">
+    The modal shows all custody chains for that work sheet.
+
+    **Selection Options:**
+    - **Todas**: Select all chains
+    - **Ninguna**: Deselect all
+    - **Pares**: Select even-numbered chains (2, 4, 6...)
+    - **Impares**: Select odd-numbered chains (1, 3, 5...)
+
+    Check/uncheck individual chains as needed.
+
+    <Info>
+    Chains already with files show a green checkmark ✅ but can be reselected to replace.
+    </Info>
+  </Step>
+
+  <Step title="Upload PDF File">
+    Click the file input and select your PDF.
+
+    **File Requirements:**
+    - Must be PDF format
+    - Page count must EXACTLY match selected chain count
+    - Pages are assigned in order: Page 1 → Chain 1, Page 2 → Chain 2, etc.
+
+    **Page Counter:**
+    The system automatically detects page count:
+    - Shows "Páginas detectadas: X"
+    - Green checkmark if X matches selected chains
+    - Red error if counts don't match
+  </Step>
+
+  <Step title="Verify and Submit">
+    Before uploading:
+    - Verify page count matches: "deben ser X"
+    - Ensure chains are in correct order
+    - Check that the PDF pages correspond to the right chains
+
+    Click **Subir X archivo(s)** when ready.
+  </Step>
+
+  <Step title="Upload Processing">
+    The system:
+    - Shows progress: "Procesando carga masiva..."
+    - Splits the PDF into individual pages
+    - Assigns each page to the corresponding custody chain
+    - Saves files to storage
+    - Updates database records
+
+    **Success Message:**
+    "Se asignaron X archivo(s) correctamente."
+  </Step>
+</Steps>
+
+<Warning>
+**Critical: Page Order Matters**
+
+The bulk upload assigns pages sequentially. If your PDF pages are out of order, the wrong documents will be assigned to chains. Always verify PDF page order before bulk upload.
+</Warning>
+
+### Bulk Upload Example
+
+**Scenario:** Work sheet has 5 custody chains:
+1. Cadena #101 - 01/03/2024
+2. Cadena #102 - 03/03/2024
+3. Cadena #103 - 05/03/2024
+4. Cadena #104 - 07/03/2024
+5. Cadena #105 - 09/03/2024
+
+**You have:** A 5-page PDF where:
+- Page 1 = Signed custody chain for 01/03
+- Page 2 = Signed custody chain for 03/03
+- Page 3 = Signed custody chain for 05/03
+- Page 4 = Signed custody chain for 07/03
+- Page 5 = Signed custody chain for 09/03
+
+**Process:**
+1. Click "Masiva" on the work sheet
+2. Click "Todas" to select all 5 chains
+3. Upload the 5-page PDF
+4. System detects "Páginas detectadas: 5" ✓
+5. Click "Subir 5 archivo(s)"
+6. System assigns Page 1→Chain 1, Page 2→Chain 2, etc.
+7. All 5 chains now have PDFs attached ✅
+
+---
+
+## PDF Generation and Merging
+
+Mantis can generate and merge PDFs for comprehensive reporting.
+
+### Individual Document PDFs
+
+**Custody Chain Reports:**
+The system auto-generates custody chain PDFs from database records.
+
+**To view/download:**
+1. Navigate to custody chain view (via Planillas tab)
+2. Click **Descargar PDF** button on the chain
+3. PDF is generated on-the-fly with:
+   - Project information header
+   - Technical and vehicle details
+   - Resource list table
+   - Signature fields
+   - Totals (gallons, cubic meters, barrels)
+
+**PDF Template Source:** `/api/custody-chain/<id>/pdf/`
+
+### Merged Document Download
+
+Combine multiple documents into a single PDF for archival or client delivery.
+
+**Download All Documents:**
+<Steps>
+  <Step title="Click 'Descargar Todo'">
+    From the Documents tab header, click the **Descargar Todo** button.
+  </Step>
+
+  <Step title="PDF Generation">
+    The system:
+    - Collects all uploaded documents
+    - Merges them in hierarchical order:
+      1. Work Sheet PDFs
+      2. Custody Chain PDFs (grouped by work sheet)
+      3. Shipping Guide PDFs
+    - Adds bookmarks for navigation
+    - Generates table of contents
+  </Step>
+
+  <Step title="Download">
+    The merged PDF opens in a new tab. Use browser download to save.
+
+    **Filename format:** `proyecto_<id>_documentos_completos.pdf`
+  </Step>
+</Steps>
+
+**Download Work Sheet Documents:**
+
+To download documents for a specific work sheet:
+1. Locate the work sheet in the tree
+2. Click the **download icon** next to the work sheet name
+3. System merges only that work sheet's documents
+
+<Info>
+PDF merging preserves document quality and metadata. Bookmarks allow easy navigation in the merged document.
+</Info>
+
+---
+
+## Document Validation
+
+Mantis validates uploads to ensure document integrity.
+
+### File Format Validation
+
+**Accepted Formats:**
+- ✅ PDF (.pdf)
+- ❌ Word documents (.doc, .docx)
+- ❌ Images (.jpg, .png) - unless converted to PDF first
+
+**Why PDF only?**
+- Consistent rendering across devices
+- Preserves signatures and formatting
+- Supports merging and splitting
+- Industry standard for legal documents
+
+### File Size Limits
+
+**Individual Upload:**
+- Typical limit: 10MB per file
+- For larger files: Compress PDF or split into multiple documents
+
+**Bulk Upload:**
+- Typical limit: 25MB per merged file
+- Number of pages: Recommended max 50 pages
+
+<Tip>
+Use online PDF compression tools to reduce file size without losing quality. Aim for 300 DPI for scanned documents.
+</Tip>
+
+### Bulk Upload Validation
+
+**Page Count Matching:**
+```javascript
+// System validates:
+if (pdf_page_count !== selected_chains.length) {
+  return error("Page count must match selected chains");
+}
+```
+
+**Error Messages:**
+- "Deben ser X páginas" - PDF has wrong page count
+- "No se seleccionó ninguna cadena" - Must select at least one chain
+- "Error al procesar PDF" - File is corrupted or invalid PDF
+
+---
+
+## Document Organization Best Practices
+
+### File Naming Conventions (Before Upload)
+
+While Mantis assigns filenames automatically, organizing files before upload helps:
+
+**Work Sheets:**
+```
+planilla_proyecto123_periodo_01-15mar.pdf
+planilla_proyecto123_periodo_16-31mar.pdf
+```
+
+**Custody Chains:**
+```
+custodia_proyecto123_cadena101_01mar.pdf
+custodia_proyecto123_cadena102_03mar.pdf
+```
+
+**Shipping Guides:**
+```
+guia_proyecto123_001_salida_01mar.pdf
+guia_proyecto123_002_entrada_15mar.pdf
+```
+
+### Upload Workflow
+
+**Recommended Order:**
+1. **Create work sheets** first (via Planillas tab)
+2. **Generate custody chains** for each sheet
+3. **Get physical signatures** on printed documents
+4. **Scan signed documents** to PDF
+5. **Upload to Documents tab** (use bulk for chains)
+6. **Verify completion** (check progress bar = 100%)
+
+### Quality Standards
+
+**Scanning Guidelines:**
+- Resolution: 300 DPI minimum
+- Color mode: Grayscale or color (avoid black & white)
+- Orientation: Correct (not rotated)
+- Cropping: Remove blank borders
+- Clarity: Ensure signatures and text are legible
+
+**PDF Guidelines:**
+- Single document per file (no multi-document PDFs)
+- Correct page order (especially for bulk uploads)
+- Unlocked (no password protection)
+- No form fields (flatten forms before upload)
+
+---
+
+## Managing Uploaded Documents
+
+### Viewing Documents
+
+<Steps>
+  <Step title="Locate Document">
+    Expand the tree to find the document (must have ✅ icon).
+  </Step>
+
+  <Step title="Click View Button">
+    Click the **eye icon** (Ver) button.
+  </Step>
+
+  <Step title="Review">
+    PDF opens in new browser tab. Use browser PDF viewer to:
+    - Zoom in/out
+    - Navigate pages
+    - Print
+    - Download to local machine
+  </Step>
+</Steps>
+
+### Replacing Documents
+
+To replace an incorrect or outdated document:
+
+<Steps>
+  <Step title="Click Upload Button">
+    On an already-uploaded document (with ✅ icon), click the **upload icon** button.
+    
+    Button text shows "Reemplazar" instead of "Subir".
+  </Step>
+
+  <Step title="Confirm Replacement">
+    The modal shows:
+    - "Archivo actual: [filename] (se reemplazará)"
+    - This warns you that the existing file will be overwritten
+  </Step>
+
+  <Step title="Upload New File">
+    Select the new PDF and click **Subir**.
+    
+    The old file is replaced immediately. Previous file cannot be recovered.
+  </Step>
+</Steps>
+
+<Warning>
+**Replacement is permanent.** There is no version history. Ensure the new file is correct before uploading.
+</Warning>
+
+### Deleting Documents
+
+To remove an uploaded document:
+
+<Steps>
+  <Step title="Click Delete Button">
+    Click the **trash icon** (red) next to the document.
+  </Step>
+
+  <Step title="Confirm Deletion">
+    Browser confirmation dialog: "¿Eliminar '[filename]'?"
+    
+    Click **OK** to confirm.
+  </Step>
+
+  <Step title="Document Removed">
+    - File is deleted from storage
+    - Database record is cleared
+    - Icon changes from ✅ to ❌
+    - Progress bar decreases
+  </Step>
+</Steps>
+
+<Note>
+You can only delete documents if the project is still open. Closed projects lock all documents.
+</Note>
+
+---
+
+## API Endpoints for Document Management
+
+### Get Document Tree
+
+```http
+GET /api/projects/<project_id>/documents/tree/
+```
+
+**Response Structure:**
+```json
+{
+  "success": true,
+  "data": {
+    "sheets": [
+      {
+        "id": 1,
+        "label": "Planilla #1",
+        "period": "01/03 - 15/03",
+        "files": [
+          {
+            "field_name": "pdf_sheet",
+            "field_label": "PDF Planilla",
+            "has_file": true,
+            "file_url": "/media/...",
+            "file_name": "planilla_1.pdf"
+          }
+        ],
+        "custody_chains": []
+      }
+    ],
+    "shipping_guides": [],
+    "stats": {
+      "total": 15,
+      "loaded": 12
+    }
+  }
+}
+```
+
+### Upload Individual File
+
+```http
+POST /api/load-files/
+Content-Type: multipart/form-data
+
+file: [PDF binary]
+model_type: "SheetProject"
+object_id: 1
+field_name: "pdf_sheet"
+```
+
+### Bulk Upload Custody Chains
+
+```http
+POST /api/projects/<project_id>/bulk-custody-upload/
+Content-Type: multipart/form-data
+
+file: [PDF binary]
+chain_ids: [1, 2, 3, 4, 5]
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Se asignaron 5 archivo(s) correctamente",
+  "saved": 5
+}
+```
+
+### Download Merged PDF
+
+```http
+GET /api/projects/<project_id>/documents/merge/?scope=all
+GET /api/projects/<project_id>/documents/merge/?scope=all&sheet_id=1
+```
+
+**Query Parameters:**
+- `scope`: "all" (entire project) or "sheet" (single work sheet)
+- `sheet_id`: Required if scope=sheet
+
+**Response:** Binary PDF stream
+
+---
+
+## Common Issues and Solutions
+
+<AccordionGroup>
+  <Accordion title="Upload fails with 'Error al subir'">
+    **Possible Causes:**
+    1. File size exceeds limit
+    2. File is not a valid PDF
+    3. File is password-protected
+    4. Network interruption during upload
+
+    **Solution:**
+    - Check file size (should be under 10MB)
+    - Verify file opens correctly in PDF viewer
+    - Remove password protection
+    - Retry upload with stable connection
+    - Try compressing the PDF
+  </Accordion>
+
+  <Accordion title="Bulk upload page count mismatch">
+    **Problem:** "Deben ser X páginas" error
+
+    **Cause:** PDF page count ≠ selected chains count
+
+    **Solution:**
+    1. Check PDF page count in a PDF viewer
+    2. Adjust chain selection to match:
+       - If PDF has 3 pages, select exactly 3 chains
+       - Use "Ninguna" then manually select correct chains
+    3. Alternatively, add/remove pages from PDF to match chains
+    4. Ensure PDF doesn't have blank pages
+  </Accordion>
+
+  <Accordion title="Cannot delete document">
+    **Problem:** Delete button disabled or missing
+
+    **Causes:**
+    - Project is closed (documents locked)
+    - User lacks delete permission
+
+    **Solution:**
+    - For closed projects: Cannot delete (by design for data integrity)
+    - For permission issues: Contact administrator for role adjustment
+    - Alternative: Replace document instead of deleting
+  </Accordion>
+
+  <Accordion title="Document tree not loading">
+    **Problem:** "Error de conexión" or infinite loading
+
+    **Causes:**
+    1. Server error
+    2. Network connectivity
+    3. Browser cache issue
+
+    **Solution:**
+    - Refresh the page (F5)
+    - Clear browser cache (Ctrl+Shift+Delete)
+    - Check browser console for errors (F12)
+    - Verify server is running
+    - Try different browser
+  </Accordion>
+
+  <Accordion title="Progress bar stuck below 100%">
+    **Problem:** Some documents showing ❌ but you've uploaded everything
+
+    **Causes:**
+    - New work sheets/chains created after initial review
+    - Deleted documents not reflected
+    - Cache issue
+
+    **Solution:**
+    1. Use "Expandir todo" to see all nodes
+    2. Check for new work sheets at bottom of tree
+    3. Verify each custody chain (they can be hidden in collapsed sheets)
+    4. Refresh page to reload tree data
+    5. Check stats: "X/Y archivos" to see exact counts
+  </Accordion>
+
+  <Accordion title="Merged PDF missing documents">
+    **Problem:** Downloaded merged PDF doesn't include all documents
+
+    **Cause:** Only uploaded documents are included in merge
+
+    **Solution:**
+    - Check progress bar before downloading
+    - Ensure all required documents have ✅ icons
+    - Upload missing documents
+    - Re-download merged PDF
+    - Note: System merges only documents with has_file=true
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Document Checklist
+
+Use this checklist before closing a project:
+
+### Pre-Closure Document Verification
+
+- [ ] **Progress bar shows 100%**
+- [ ] All work sheets have PDF documents uploaded
+- [ ] All custody chains have signed PDFs
+- [ ] All shipping guides (if any) are uploaded
+- [ ] Downloaded and verified merged PDF
+- [ ] All PDFs are legible with clear signatures
+- [ ] Document dates match work sheet periods
+- [ ] Client sign-off obtained on all custody chains
+- [ ] Archive copy saved to company file system
+
+### Document Types by Project Phase
+
+**During Setup (Week 1):**
+- Initial shipping guides (equipment delivery)
+
+**During Operations (Ongoing):**
+- Biweekly work sheet PDFs
+- Custody chain PDFs for each work order
+- Mid-project shipping guides (equipment additions)
+
+**At Project Completion:**
+- Final work sheet PDF
+- Final custody chain PDFs
+- Return shipping guides (equipment pickup)
+- Merged consolidated PDF for archival
+
+---
+
+## Related Guides
+
+<CardGroup cols={3}>
+  <Card title="Project Management" icon="folder-open" href="/guides/project-management">
+    Learn about project lifecycle and closure
+  </Card>
+  <Card title="Resource Allocation" icon="chart-network" href="/guides/resource-allocation">
+    Manage resources tracked in custody chains
+  </Card>
+  <Card title="Calendar Scheduling" icon="calendar-day" href="/guides/calendar-scheduling">
+    Schedule work orders and maintenance
+  </Card>
+</CardGroup>

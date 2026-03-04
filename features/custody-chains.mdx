@@ -1,0 +1,430 @@
+---
+title: Custody Chains
+description: Track waste disposal, responsibility transfers, and environmental compliance
+icon: link
+---
+
+## Overview
+
+Custody Chains document the collection, transportation, and disposal of wastewater and waste materials from client sites. Each chain records volumes, types of waste, responsible parties, and maintains a complete audit trail for environmental compliance.
+
+## CustodyChain Model
+
+### Core Purpose
+
+A custody chain tracks a single waste collection event, documenting:
+- What was collected (waste types and volumes)
+- Who collected it (technical staff and driver)
+- When it was collected (date and time)
+- Where it came from (location and contact)
+- How it was transported (vehicle and equipment)
+
+```python
+class CustodyChain(BaseModel):
+    id = AutoField(primary_key=True)
+    status = CharField(
+        choices=[
+            ('DRAFT', 'BORRADOR'),
+            ('CLOSE', 'CERRADO'),
+            ('CANCELLED', 'CANCELADO'),
+            ('INVOICE', 'FACTURADO')
+        ],
+        default='DRAFT'
+    )
+    technical = ForeignKey(Technical, on_delete=PROTECT)
+    vehicle = ForeignKey(Vehicle, on_delete=PROTECT)
+    sheet_project = ForeignKey(SheetProject, on_delete=PROTECT)
+    consecutive = CharField(max_length=7)  # Auto-generated: 0000001, 0000002...
+    activity_date = DateField()
+    location = CharField(max_length=255)
+```
+
+### Consecutive Numbering
+
+Custody chains use global sequential numbering:
+
+```python
+# Automatic generation
+consecutive = CustodyChain.get_next_consecutive()
+# Returns: "0000001", "0000002", etc.
+```
+
+<Note>
+  The consecutive number is unique across all custody chains and never resets. It serves as the primary document identifier.
+</Note>
+
+## Waste Types and Volumes
+
+### Waste Type Flags
+
+Track specific waste types collected:
+
+<CardGroup cols={2}>
+  <Card title="Black Water" icon="droplet">
+    `black_water = BooleanField()`
+    
+    Sewage from toilets
+  </Card>
+  <Card title="Grey Water" icon="droplet">
+    `grey_water = BooleanField()`
+    
+    Wastewater from sinks/showers
+  </Card>
+  <Card title="Clean Water" icon="droplet">
+    `clean_water = BooleanField()`
+    
+    Potable or clean water
+  </Card>
+  <Card title="Activated Sludge" icon="droplet">
+    `activated_sludge = BooleanField()`
+    
+    Biological treatment sludge
+  </Card>
+  <Card title="Treated Wastewater" icon="droplet">
+    `treated_wastewater = BooleanField()`
+    
+    Processed wastewater
+  </Card>
+  <Card title="Organic Grease" icon="droplet">
+    `organic_grease = BooleanField()`
+    
+    Grease trap waste
+  </Card>
+</CardGroup>
+
+### Volume Measurements
+
+Record collected volumes in multiple units:
+
+```python
+total_gallons = DecimalField(max_digits=10, decimal_places=2, default=0)
+total_barrels = DecimalField(max_digits=10, decimal_places=2, default=0)
+total_cubic_meters = DecimalField(max_digits=10, decimal_places=2, default=0)
+```
+
+**Conversion Reference:**
+- 1 barrel = 42 gallons
+- 1 cubic meter = 264.172 gallons
+- 1 cubic meter = 6.289 barrels
+
+## Responsibility Tracking
+
+### Time and Duration
+
+```python
+start_time = TimeField()  # Arrival time
+end_time = TimeField()    # Departure time
+time_duration = DecimalField(max_digits=10, decimal_places=2)  # Hours on site
+```
+
+### Client Contact Person
+
+Document the on-site contact who authorized the collection:
+
+```python
+contact_name = CharField(max_length=255)
+dni_contact = CharField(max_length=15)  # ID number
+contact_position = CharField(max_length=255)
+date_contact = DateField()  # Date of signature
+```
+
+### Driver/Transporter
+
+Record the person responsible for transportation:
+
+```python
+driver_name = CharField(max_length=255)
+dni_driver = CharField(max_length=15)
+driver_position = CharField(max_length=255)
+driver_date = DateField()  # Date of signature
+```
+
+<Warning>
+  Both contact and driver signatures (via date fields) are required before a custody chain can be closed. This ensures proper chain of responsibility.
+</Warning>
+
+## Logistics Flag
+
+Indicate whether logistics services were provided:
+
+```python
+have_logistic = CharField(
+    choices=[
+        ('SI', 'SI'),
+        ('NO', 'NO'),
+        ('NA', 'NO APLICA')
+    ],
+    default='NA'
+)
+```
+
+- **SI**: Logistics services included (may add cost)
+- **NO**: No logistics services
+- **NA**: Not applicable for this operation
+
+## Custody Chain Details
+
+### ChainCustodyDetail Model
+
+Each custody chain can reference multiple equipment items:
+
+```python
+class ChainCustodyDetail(BaseModel):
+    id = AutoField(primary_key=True)
+    custody_chain = ForeignKey(CustodyChain, on_delete=PROTECT)
+    project_resource = ForeignKey(ProjectResourceItem, on_delete=PROTECT)
+    equipment = CharField(max_length=60)  # Equipment type
+    code_equipment = TextField(max_length=150)  # Equipment code/detail
+```
+
+### Purpose
+
+Detail records link the custody chain to specific equipment that was serviced:
+- Identify which tanks were emptied
+- Track which bathrooms were serviced
+- Document equipment involved in collection
+
+```python
+# Get all details for a custody chain
+details = ChainCustodyDetail.get_by_custody_chain(custody_chain)
+
+# Get details by sheet project
+all_details = ChainCustodyDetail.get_by_sheet_project(sheet_project)
+
+# Get details by resource
+resource_details = ChainCustodyDetail.get_by_resource_id(resource_id)
+```
+
+## Custody Chain Lifecycle
+
+<Steps>
+  <Step title="DRAFT">
+    Initial state. Custody chain is being prepared:
+    - Record activity date, location, and time
+    - Assign technical staff and vehicle
+    - Add equipment details
+    - Record waste types and volumes
+  </Step>
+  <Step title="CLOSE">
+    Collection complete and documented:
+    - Both contact and driver signatures obtained
+    - All volumes verified
+    - Equipment list finalized
+    - Ready for inclusion in work order
+  </Step>
+  <Step title="INVOICE">
+    Included in billed work order:
+    - Part of SheetProject
+    - Client has been invoiced
+  </Step>
+  <Step title="CANCELLED">
+    Operation cancelled or voided:
+    - Not included in billing
+    - Archived for records
+  </Step>
+</Steps>
+
+<Note>
+  Closed custody chains cannot be deleted or modified. This ensures environmental compliance audit trails remain intact.
+</Note>
+
+## Document Attachment
+
+Attach the signed custody chain PDF:
+
+```python
+custody_chain_file = FileField(
+    upload_to='projects/custody_chains/',
+    validators=[validate_pdf_file]
+)
+```
+
+## Code Examples
+
+### Creating a Custody Chain
+
+```python
+from projects.models import CustodyChain, SheetProject
+from accounts.models import Technical
+from equipment.models import Vehicle
+from datetime import date, time
+
+# Create custody chain
+chain = CustodyChain.objects.create(
+    sheet_project=sheet_project,
+    consecutive=CustodyChain.get_next_consecutive(),
+    technical=technical,
+    vehicle=vehicle,
+    activity_date=date(2026, 3, 15),
+    location='Campamento Norte - RIG 45',
+    start_time=time(8, 30),
+    end_time=time(11, 45),
+    time_duration=3.25,
+    
+    # Client contact
+    contact_name='Juan Pérez',
+    dni_contact='1234567890',
+    contact_position='Supervisor de Campo',
+    date_contact=date(2026, 3, 15),
+    
+    # Driver
+    driver_name='Carlos Rodríguez',
+    dni_driver='0987654321',
+    driver_position='Operador de Vacuum',
+    driver_date=date(2026, 3, 15),
+    
+    # Waste collected
+    black_water=True,
+    grey_water=True,
+    total_gallons=500.00,
+    total_barrels=11.90,
+    total_cubic_meters=1.89,
+    
+    have_logistic='SI'
+)
+```
+
+### Adding Equipment Details
+
+```python
+from projects.models import ChainCustodyDetail
+
+# Link equipment to custody chain
+detail = ChainCustodyDetail.objects.create(
+    custody_chain=chain,
+    project_resource=project_resource_item,
+    equipment='BTSNHM',
+    code_equipment='BT-001 - Batería Sanitaria Hombre'
+)
+```
+
+### Closing a Custody Chain
+
+```python
+# Verify signatures are present
+if chain.contact_name and chain.driver_name and chain.date_contact and chain.driver_date:
+    chain.status = 'CLOSE'
+    chain.save()
+else:
+    raise ValidationError('Both contact and driver signatures required to close custody chain')
+```
+
+### Deletion Protection
+
+```python
+try:
+    chain.delete()
+except ValidationError as e:
+    print(e)  # "No se puede eliminar una cadena de custodia que está CERRADA."
+```
+
+## Querying Custody Chains
+
+```python
+# Get all chains for a work order
+chains = CustodyChain.objects.filter(
+    sheet_project=sheet_project,
+    is_active=True
+).order_by('activity_date', 'consecutive')
+
+# Get closed chains ready for invoicing
+ready_to_bill = CustodyChain.objects.filter(
+    status='CLOSE',
+    sheet_project__status='IN_PROGRESS',
+    is_active=True
+)
+
+# Calculate total waste for a project
+from django.db.models import Sum
+total_waste = CustodyChain.objects.filter(
+    sheet_project__project=project,
+    status__in=['CLOSE', 'INVOICE']
+).aggregate(
+    total_gallons=Sum('total_gallons'),
+    total_barrels=Sum('total_barrels'),
+    total_cubic_meters=Sum('total_cubic_meters')
+)
+```
+
+## Environmental Compliance
+
+### Required Documentation
+
+For regulatory compliance, custody chains must include:
+
+<AccordionGroup>
+  <Accordion title="Waste Classification">
+    - Check appropriate waste type flags
+    - Document any hazardous materials
+    - Record proper handling procedures
+  </Accordion>
+  
+  <Accordion title="Volume Verification">
+    - Measure volumes accurately
+    - Record in all three units (gallons, barrels, cubic meters)
+    - Verify totals match vehicle capacity
+  </Accordion>
+  
+  <Accordion title="Chain of Custody">
+    - Technical staff signature (via technical assignment)
+    - Client contact signature (date_contact)
+    - Driver signature (driver_date)
+    - Complete time records
+  </Accordion>
+  
+  <Accordion title="Transportation Records">
+    - Vehicle identification (license plate)
+    - Driver credentials (DNI)
+    - Route and location documentation
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Before Collection">
+    - Create custody chain in DRAFT status
+    - Assign qualified technical staff
+    - Verify vehicle certifications are current
+    - Confirm equipment list with client
+  </Accordion>
+  
+  <Accordion title="During Collection">
+    - Record accurate start and end times
+    - Measure volumes carefully
+    - Photograph waste sources if needed
+    - Obtain client signature before departing
+  </Accordion>
+  
+  <Accordion title="After Collection">
+    - Update custody chain with final volumes
+    - Add driver signature
+    - Change status to CLOSE
+    - Upload signed custody chain PDF
+    - Link to work order for billing
+  </Accordion>
+  
+  <Accordion title="Record Retention">
+    - Never delete closed custody chains
+    - Keep PDF documents for 7+ years
+    - Archive in compliance with regulations
+    - Maintain audit trail for inspections
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Work Orders" icon="clipboard-list" href="/features/work-orders">
+    Include custody chains in billing work orders
+  </Card>
+  <Card title="Equipment" icon="toolbox" href="/features/equipment">
+    Track equipment serviced during collection
+  </Card>
+  <Card title="Reports" icon="file-pdf" href="/features/reports">
+    Generate custody chain PDFs and compliance reports
+  </Card>
+  <Card title="Projects" icon="folder-open" href="/features/projects">
+    Link custody chains to project contracts
+  </Card>
+</CardGroup>

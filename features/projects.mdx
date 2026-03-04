@@ -1,0 +1,229 @@
+---
+title: Projects
+description: Manage project contracts, resource assignments, and location tracking
+icon: folder-open
+---
+
+## Overview
+
+The Projects module enables you to manage client contracts, track resource assignments, and monitor project lifecycles from initiation to closure. Each project is associated with a partner (client) and maintains complete audit trails of all resources and activities.
+
+## Core Models
+
+### Project
+
+Represents a service contract with a client. Projects remain active until explicitly closed and serve as the parent container for all resource assignments and work activities.
+
+<CardGroup cols={2}>
+  <Card title="Partner Association" icon="handshake">
+    Each project is linked to a Partner (client) who is billed for services
+  </Card>
+  <Card title="Location Tracking" icon="location-dot">
+    Track campamento (location) and cardinal points (NORTE, SUR, ESTE, OESTE, etc.)
+  </Card>
+  <Card title="Contact Management" icon="address-book">
+    Store contact name and phone number for on-site coordination
+  </Card>
+  <Card title="Lifecycle Control" icon="clock">
+    Manage start_date, end_date, and is_closed status
+  </Card>
+</CardGroup>
+
+### Key Fields
+
+```python
+class Project(BaseModel):
+    id = AutoField(primary_key=True)
+    partner = ForeignKey('projects.Partner', on_delete=PROTECT)
+    location = CharField(max_length=50)  # Campamento
+    cardinal_point = CharField(
+        max_length=20,
+        choices=[
+            'NORTE', 'SUR', 'ESTE', 'OESTE',
+            'NORESTE', 'NOROESTE', 'SURESTE', 'SUROESTE'
+        ]
+    )
+    contact_name = CharField(max_length=255)
+    contact_phone = CharField(max_length=15)
+    start_date = DateField()
+    end_date = DateField(blank=True, null=True)
+    is_closed = BooleanField(default=False)
+```
+
+<Note>
+  Projects use logical deletion (`is_deleted` from BaseModel) to preserve historical records. The `is_closed` field controls whether new resources can be assigned.
+</Note>
+
+## Project Resource Assignment
+
+### ProjectResourceItem
+
+Links physical equipment (`ResourceItem`) to projects with rental costs, maintenance scheduling, and operational date ranges.
+
+<Accordion title="Resource Assignment Features">
+  - **Cost Tracking**: Separate fields for rental cost and maintenance cost
+  - **Maintenance Scheduling**: Frequency-based scheduling with three modes
+  - **Operation Dates**: Track when equipment enters and exits service
+  - **Retirement Tracking**: Record retirement date and reason when equipment is removed
+</Accordion>
+
+### Frequency-Based Maintenance Scheduling
+
+The system supports three scheduling modes:
+
+<CardGroup cols={3}>
+  <Card title="Interval Days" icon="calendar">
+    **frequency_type = 'DAY'**
+    
+    Maintenance every N days
+    
+    `interval_days = 2` means every 2 days
+  </Card>
+  <Card title="Weekdays" icon="calendar-week">
+    **frequency_type = 'WEEK'**
+    
+    Specific days of the week
+    
+    `weekdays = [0, 2, 4]` means Monday, Wednesday, Friday
+  </Card>
+  <Card title="Month Days" icon="calendar-days">
+    **frequency_type = 'MONTH'**
+    
+    Specific days of the month
+    
+    `monthdays = [1, 15, 28]` means 1st, 15th, and 28th
+  </Card>
+</CardGroup>
+
+### Code Example: Assigning Resources
+
+```python
+from projects.models import Project, ProjectResourceItem
+from equipment.models import ResourceItem
+
+# Assign a resource to a project with weekly maintenance
+resource_assignment = ProjectResourceItem.objects.create(
+    project=project,
+    resource_item=resource,
+    type_resource='EQUIPO',
+    physical_equipment_code=101,
+    cost=250.00,
+    frequency_type='WEEK',
+    weekdays=[0, 3],  # Monday and Thursday
+    operation_start_date='2026-01-15',
+    operation_end_date='2026-06-30'
+)
+
+# Get all resources for a project
+resources = ProjectResourceItem.get_by_project(project_id=1)
+```
+
+## Project Lifecycle
+
+### 1. Project Creation
+
+<Steps>
+  <Step title="Create Project">
+    Initialize project with partner, location, contact details, and start date
+  </Step>
+  <Step title="Assign Resources">
+    Link equipment and services via ProjectResourceItem with cost and schedule
+  </Step>
+  <Step title="Track Operations">
+    Monitor resource status, maintenance activities, and work orders
+  </Step>
+  <Step title="Close Project">
+    Set `is_closed = True` when project is complete (data is preserved)
+  </Step>
+</Steps>
+
+### 2. Resource Retirement
+
+When equipment needs to be removed from a project:
+
+```python
+# Mark resource as retired
+resource_assignment.is_retired = True
+resource_assignment.retirement_date = datetime.date.today()
+resource_assignment.retirement_reason = "Equipment damaged, needs repair"
+resource_assignment.save()
+```
+
+<Warning>
+  The system uses `PROTECT` on foreign key relationships. You cannot delete a Partner or ResourceItem if it's referenced by an active ProjectResourceItem.
+</Warning>
+
+## Data Model Reference
+
+### ProjectResourceItem Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `project` | ForeignKey | Reference to Project |
+| `resource_item` | ForeignKey | Reference to ResourceItem (equipment) |
+| `type_resource` | CharField | 'EQUIPO' or 'SERVICIO' |
+| `detailed_description` | CharField | Additional details (max 120 chars) |
+| `physical_equipment_code` | PositiveSmallIntegerField | Physical identifier code |
+| `cost` | DecimalField | Rental or service cost |
+| `frequency_type` | CharField | 'DAY', 'WEEK', or 'MONTH' |
+| `interval_days` | PositiveIntegerField | Days between maintenance (when frequency_type='DAY') |
+| `weekdays` | JSONField | List of weekdays [0-6] (when frequency_type='WEEK') |
+| `monthdays` | JSONField | List of month days [1-31] (when frequency_type='MONTH') |
+| `operation_start_date` | DateField | When equipment enters service |
+| `operation_end_date` | DateField | When equipment exits service |
+| `is_retired` | BooleanField | Whether equipment has been removed |
+| `retirement_date` | DateField | Date equipment was removed |
+| `retirement_reason` | TextField | Reason for removal |
+
+## Cardinal Points Reference
+
+Projects support the following cardinal directions for location tracking:
+
+- **NORTE** (North)
+- **SUR** (South)
+- **ESTE** (East)
+- **OESTE** (West)
+- **NORESTE** (Northeast)
+- **NOROESTE** (Northwest)
+- **SURESTE** (Southeast)
+- **SUROESTE** (Southwest)
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Resource Management">
+    - Always set `operation_start_date` and `operation_end_date` for tracking
+    - Use `is_retired` instead of deleting ProjectResourceItem records
+    - Document retirement reasons for audit trail
+  </Accordion>
+  
+  <Accordion title="Maintenance Scheduling">
+    - Choose frequency_type based on client requirements
+    - Use 'DAY' for simple intervals (every 2 days, every 7 days)
+    - Use 'WEEK' for specific weekdays (Monday/Wednesday/Friday)
+    - Use 'MONTH' for monthly schedules (1st and 15th of month)
+  </Accordion>
+  
+  <Accordion title="Project Closure">
+    - Set `is_closed = True` instead of deleting projects
+    - Retire all resources before closing project
+    - Ensure all work orders and custody chains are finalized
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Equipment" icon="toolbox" href="/features/equipment">
+    Manage the resource items assigned to projects
+  </Card>
+  <Card title="Work Orders" icon="clipboard-list" href="/features/work-orders">
+    Track work activities on project resources
+  </Card>
+  <Card title="Custody Chains" icon="link" href="/features/custody-chains">
+    Document responsibility transfers and waste handling
+  </Card>
+  <Card title="Maintenance" icon="wrench" href="/features/maintenance">
+    Schedule and track equipment maintenance
+  </Card>
+</CardGroup>

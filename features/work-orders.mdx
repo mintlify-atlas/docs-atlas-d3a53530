@@ -1,0 +1,360 @@
+---
+title: Work Orders (Sheet Project)
+description: Track work activities, resources, and billable services for project billing
+icon: clipboard-list
+---
+
+## Overview
+
+Work Orders (SheetProject) are the primary billing documents in Mantis. They consolidate rental charges, maintenance services, custody chains, and shipping guides into a single billable document for invoicing.
+
+## SheetProject Model
+
+### Core Concept
+
+A SheetProject represents a billing period for a specific project, typically covering a date range (e.g., monthly billing). It aggregates all billable activities including:
+
+- Equipment rentals (daily rates)
+- Maintenance services
+- Waste disposal (custody chains)
+- Logistics (shipping guides)
+
+```python
+class SheetProject(BaseModel):
+    id = AutoField(primary_key=True)
+    project = ForeignKey(Project, on_delete=PROTECT)
+    issue_date = DateField()
+    period_start = DateField()
+    period_end = DateField()
+    status = CharField(
+        choices=[
+            ('IN_PROGRESS', 'EN EJECUCIÓN'),
+            ('LIQUIDATED', 'LIQUIDADO'),
+            ('INVOICED', 'FACTURADO'),
+            ('CANCELLED', 'CANCELADO')
+        ],
+        default='IN_PROGRESS'
+    )
+    series_code = CharField(max_length=50, default='PSL-PS-0000-0000')
+    service_type = CharField(
+        choices=[
+            ('ALQUILER', 'ALQUILER'),
+            ('MANTENIMIENTO', 'MANTENIMIENTO'),
+            ('ALQUILER Y MANTENIMIENTO', 'ALQUILER Y MANTENIMIENTO')
+        ],
+        default='ALQUILER Y MANTENIMIENTO'
+    )
+```
+
+### Series Code Generation
+
+Work orders use an automatic series code format:
+
+**Format**: `PSL-PS-YYYY-NNNN`
+
+Where:
+- `PSL-PS`: Fixed prefix
+- `YYYY`: Current year
+- `NNNN`: Sequential number (starts at 1000 each year)
+
+```python
+# Automatic generation
+series_code = SheetProject.get_next_series_code()
+# Example: "PSL-PS-2026-1000"
+```
+
+<Note>
+  The series code resets annually, starting from 1000 each year.
+</Note>
+
+## Work Order Lifecycle
+
+<Steps>
+  <Step title="IN_PROGRESS">
+    Work order is open and accepting line items from various sources:
+    - Equipment rental days
+    - Maintenance work (SheetMaintenance)
+    - Custody chains (waste disposal)
+    - Shipping guides (logistics)
+  </Step>
+  <Step title="LIQUIDATED">
+    All services have been rendered and costs calculated. Work order is ready for invoicing but not yet billed.
+  </Step>
+  <Step title="INVOICED">
+    Invoice has been generated and sent to the client. Invoice file can be attached.
+  </Step>
+  <Step title="CANCELLED">
+    Work order was cancelled and should not be billed.
+  </Step>
+</Steps>
+
+## Line Items (SheetProjectDetail)
+
+### Detail Records
+
+Each billable item is recorded as a `SheetProjectDetail`:
+
+```python
+class SheetProjectDetail(BaseModel):
+    id = AutoField(primary_key=True)
+    sheet_project = ForeignKey(SheetProject, on_delete=PROTECT)
+    resource_item = ForeignKey(ResourceItem, on_delete=PROTECT)
+    reference_document = CharField(
+        choices=[
+            ('ShippingGuide', 'Guía de Envío'),
+            ('CustodyChain', 'Cadena de Custodia'),
+            ('SheetMaintenance', 'Hoja de Mantenimiento'),
+            ('ResourceItem', 'Ítem de Recurso')
+        ]
+    )
+    id_reference_document = PositiveIntegerField()
+    project_resource_item = ForeignKey(ProjectResourceItem, on_delete=PROTECT)
+    equipment = CharField(max_length=100)
+    detail = TextField()
+    item_unity = CharField(
+        choices=[
+            ('DIAS', 'DÍAS'),
+            ('UNIDAD', 'UNIDAD')
+        ]
+    )
+    quantity = DecimalField(max_digits=10, decimal_places=2)
+    unit_price = DecimalField(max_digits=10, decimal_places=2)
+    total_line = DecimalField(max_digits=10, decimal_places=2)
+    monthdays_apply_cost = JSONField()  # Days when cost applies
+```
+
+### Reference Document Types
+
+<CardGroup cols={2}>
+  <Card title="ResourceItem" icon="toolbox">
+    Equipment rental charges
+    
+    Calculated by days in service
+  </Card>
+  <Card title="SheetMaintenance" icon="wrench">
+    Maintenance service charges
+    
+    Links to maintenance work order
+  </Card>
+  <Card title="CustodyChain" icon="link">
+    Waste disposal services
+    
+    Links to custody chain record
+  </Card>
+  <Card title="ShippingGuide" icon="truck">
+    Logistics and transportation
+    
+    Links to shipping guide
+  </Card>
+</CardGroup>
+
+## Totals and Tax Calculation
+
+### Financial Fields
+
+```python
+subtotal = DecimalField(max_digits=10, decimal_places=2, default=0)
+tax_amount = DecimalField(max_digits=10, decimal_places=2, default=0)  # IVA 15%
+total = DecimalField(max_digits=10, decimal_places=2, default=0)
+```
+
+### Calculation Flow
+
+```python
+# Calculate line total
+line_total = quantity * unit_price
+
+# Sum all line totals for subtotal
+subtotal = sum(detail.total_line for detail in sheet_details)
+
+# Apply 15% IVA tax
+tax_amount = subtotal * 0.15
+
+# Calculate final total
+total = subtotal + tax_amount
+```
+
+## Waste Tracking
+
+Work orders track total waste volumes processed:
+
+```python
+total_gallons = PositiveSmallIntegerField(default=0)
+total_barrels = PositiveSmallIntegerField(default=0)
+total_cubic_meters = PositiveSmallIntegerField(default=0)
+```
+
+These values are aggregated from linked custody chains.
+
+## Reference Fields
+
+Track related document identifiers:
+
+<AccordionGroup>
+  <Accordion title="Client Purchase Order">
+    ```python
+    client_po_reference = CharField(max_length=50)
+    ```
+    Store client's PO number for billing reference.
+  </Accordion>
+  
+  <Accordion title="Contact Information">
+    ```python
+    contact_reference = CharField(max_length=50)
+    contact_phone_reference = CharField(max_length=50)
+    ```
+    On-site contact details for service coordination.
+  </Accordion>
+  
+  <Accordion title="Final Disposition Certificate">
+    ```python
+    final_disposition_reference = CharField(max_length=50)
+    ```
+    Reference to waste disposal certificate.
+  </Accordion>
+  
+  <Accordion title="Invoice Number">
+    ```python
+    invoice_reference = CharField(max_length=50)
+    ```
+    Accounting system invoice number.
+  </Accordion>
+</AccordionGroup>
+
+## Document Attachments
+
+Attach PDF files for complete documentation:
+
+```python
+sheet_project_file = FileField(
+    upload_to='projects/sheet_projects/',
+    validators=[validate_pdf_file]
+)
+certificate_final_disposition_file = FileField(
+    upload_to='projects/final_disposition_certificates/',
+    validators=[validate_pdf_file]
+)
+invoice_file = FileField(
+    upload_to='projects/invoices/',
+    validators=[validate_pdf_file]
+)
+```
+
+## Code Examples
+
+### Creating a Work Order
+
+```python
+from projects.models import Project, SheetProject
+from datetime import date
+
+# Create new work order for billing period
+sheet = SheetProject.objects.create(
+    project=project,
+    series_code=SheetProject.get_next_series_code(),
+    issue_date=date.today(),
+    period_start=date(2026, 3, 1),
+    period_end=date(2026, 3, 31),
+    service_type='ALQUILER Y MANTENIMIENTO',
+    status='IN_PROGRESS'
+)
+```
+
+### Adding Line Items
+
+```python
+from projects.models import SheetProjectDetail
+from equipment.models import ResourceItem
+
+# Add equipment rental line
+detail = SheetProjectDetail.objects.create(
+    sheet_project=sheet,
+    resource_item=resource,
+    reference_document='ResourceItem',
+    id_reference_document=resource.id,
+    project_resource_item=project_resource,
+    equipment='BT-001 - Batería Sanitaria Hombre',
+    detail='Alquiler mensual',
+    item_unity='DIAS',
+    quantity=30,
+    unit_price=50.00,
+    total_line=1500.00
+)
+```
+
+### Closing Work Order
+
+```python
+# Mark as liquidated (ready for invoicing)
+sheet.status = 'LIQUIDATED'
+sheet.is_closed = True
+sheet.save()
+
+# After invoicing
+sheet.status = 'INVOICED'
+sheet.invoice_reference = 'INV-2026-0123'
+sheet.invoice_file = invoice_pdf_file
+sheet.save()
+```
+
+## Unique Constraints
+
+The system enforces uniqueness on billing periods:
+
+```python
+class Meta:
+    unique_together = ("project", "period_start", "period_end")
+```
+
+<Warning>
+  You cannot create multiple work orders for the same project and date range. This prevents duplicate billing.
+</Warning>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Billing Periods">
+    - Use consistent billing periods (typically monthly)
+    - Set `period_start` to first day of month
+    - Set `period_end` to last day of month
+    - Issue work order within 5 days of period end
+  </Accordion>
+  
+  <Accordion title="Status Management">
+    - Keep status as 'IN_PROGRESS' while adding line items
+    - Review all line items before changing to 'LIQUIDATED'
+    - Attach all supporting documents before invoicing
+    - Set `is_closed = True` when changing to 'LIQUIDATED'
+  </Accordion>
+  
+  <Accordion title="Line Item Documentation">
+    - Always populate `reference_document` and `id_reference_document`
+    - Include detailed descriptions in `detail` field
+    - Use `monthdays_apply_cost` for prorated charges
+    - Link to `project_resource_item` for audit trail
+  </Accordion>
+  
+  <Accordion title="Tax Compliance">
+    - Verify subtotal calculation before finalizing
+    - Apply 15% IVA tax correctly
+    - Store client's RUC (tax ID) from Partner record
+    - Archive invoice PDF after generation
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Projects" icon="folder-open" href="/features/projects">
+    Parent project contracts for work orders
+  </Card>
+  <Card title="Maintenance" icon="wrench" href="/features/maintenance">
+    Maintenance work included in work orders
+  </Card>
+  <Card title="Custody Chains" icon="link" href="/features/custody-chains">
+    Waste disposal services in work orders
+  </Card>
+  <Card title="Reports" icon="file-pdf" href="/features/reports">
+    Generate work order PDFs for clients
+  </Card>
+</CardGroup>

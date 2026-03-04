@@ -1,0 +1,281 @@
+---
+title: 'Authentication'
+description: 'Learn how to authenticate with the Mantis API using email-based session authentication'
+---
+
+## Authentication Overview
+
+Mantis uses a custom email-based authentication system with session management powered by `django-user-sessions`. Authentication is required for all API endpoints.
+
+## Authentication Backend
+
+The API uses a custom authentication backend (`EmailBackEndAuth`) that authenticates users using their email address instead of a traditional username.
+
+### Key Features
+
+- **Email as Username**: Users authenticate with their email address
+- **Session-based Authentication**: Secure session management using `django-user-sessions`
+- **Custom User Model**: `CustomUserModel` from the `accounts` app
+- **Password Security**: Django's built-in password validation and hashing
+
+## User Model
+
+The authentication system uses a custom user model with the following characteristics:
+
+```python
+AUTH_USER_MODEL = 'accounts.CustomUserModel'
+```
+
+### User Fields
+
+- `email` - Primary identifier (replaces username)
+- `first_name` - User's first name
+- `last_name` - User's last name
+- `picture` - Profile picture (optional)
+- `role` - User role: `ADMINISTRATIVO` or `TECNICO`
+- `is_confirmed_mail` - Email confirmation status
+- `siganture_name` - Signer name for documents
+- `siganture_role` - Signer role for documents
+- `notes` - Additional user notes
+
+### User Roles
+
+- **ADMINISTRATIVO** - Administrative users with full access
+- **TECNICO** - Technical users with limited access
+
+## Authentication Flow
+
+### 1. Login
+
+To authenticate, send a POST request to the login endpoint:
+
+```http
+POST /accounts/login/
+Content-Type: application/x-www-form-urlencoded
+
+username=user@example.com&password=your_password
+```
+
+<Note>
+Although the field is named `username` for compatibility, you must provide the user's email address.
+</Note>
+
+### 2. Session Management
+
+Upon successful authentication:
+
+- A session is created and stored in the database
+- A session cookie (`sessionid`) is returned
+- The session is managed by `django-user-sessions`
+
+**Session Configuration:**
+
+```python
+SESSION_ENGINE = 'user_sessions.backends.db'
+```
+
+### 3. Making Authenticated Requests
+
+Include the session cookie in subsequent API requests:
+
+```http
+GET /api/projects/resources/available/
+Cookie: sessionid=<your-session-id>
+```
+
+### 4. Logout
+
+To end the session:
+
+```http
+GET /accounts/logout/
+Cookie: sessionid=<your-session-id>
+```
+
+## Authentication Backend Implementation
+
+The custom authentication backend is defined in:
+
+**Location:** `source/app/src/common/EmailBackEndAuth.py`
+
+```python
+class EmailBackEndAuth(ModelBackend):
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        UserModel = get_user_model()
+        try:
+            user = UserModel.objects.get(email=username)
+        except UserModel.DoesNotExist:
+            return None
+
+        if user.check_password(password):
+            return user
+
+        return None
+```
+
+**Configuration:**
+
+```python
+AUTHENTICATION_BACKENDS = [
+    'common.EmailBackEndAuth.EmailBackEndAuth'
+]
+```
+
+## CORS Configuration
+
+The API supports cross-origin requests with the following settings:
+
+```python
+CORS_ORIGIN_ALLOW_ALL = True
+```
+
+### Trusted Origins (CSRF)
+
+For CSRF protection, the following origins are trusted:
+
+- `https://mantis.peisol.com.ec` (Production)
+- `http://localhost:8000` (Development)
+- `http://127.0.0.1:8000` (Development)
+- `http://localhost:3000` (Frontend dev)
+- `http://localhost:5173` (Vite dev server)
+
+## Security Considerations
+
+### Password Validation
+
+The API enforces Django's default password validators:
+
+- `UserAttributeSimilarityValidator` - Prevents passwords similar to user attributes
+- `MinimumLengthValidator` - Enforces minimum password length
+- `CommonPasswordValidator` - Prevents commonly used passwords
+- `NumericPasswordValidator` - Prevents numeric-only passwords
+
+### CSRF Protection
+
+<Warning>
+CSRF middleware is currently disabled in the settings. Ensure proper security measures are in place for production environments.
+</Warning>
+
+```python
+# Commented out in settings:
+# 'django.middleware.csrf.CsrfViewMiddleware',
+```
+
+### Session Security
+
+- Sessions are stored in the database for better security and tracking
+- Session cookies are managed automatically by Django
+- Multiple active sessions per user are supported
+
+## Example: Python Client
+
+Here's an example of authenticating and making API requests using Python:
+
+```python
+import requests
+
+# Base URL
+BASE_URL = "https://mantis.peisol.com.ec"
+
+# Create a session to persist cookies
+session = requests.Session()
+
+# Login
+login_data = {
+    "username": "user@example.com",
+    "password": "your_password"
+}
+
+response = session.post(f"{BASE_URL}/accounts/login/", data=login_data)
+
+if response.status_code == 200:
+    print("Login successful!")
+    
+    # Make authenticated API request
+    api_response = session.get(f"{BASE_URL}/api/projects/resources/available/")
+    
+    if api_response.status_code == 200:
+        data = api_response.json()
+        print(f"Success: {data['success']}")
+        print(f"Resources: {len(data['data'])}")
+else:
+    print("Login failed!")
+```
+
+## Example: JavaScript Client
+
+Here's an example using JavaScript with the Fetch API:
+
+```javascript
+const BASE_URL = 'https://mantis.peisol.com.ec';
+
+// Login
+async function login(email, password) {
+  const formData = new URLSearchParams();
+  formData.append('username', email);
+  formData.append('password', password);
+
+  const response = await fetch(`${BASE_URL}/accounts/login/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: formData,
+    credentials: 'include', // Include cookies
+  });
+
+  return response.ok;
+}
+
+// Make authenticated API request
+async function getAvailableResources() {
+  const response = await fetch(`${BASE_URL}/api/projects/resources/available/`, {
+    method: 'GET',
+    credentials: 'include', // Include session cookie
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    return data;
+  }
+  
+  throw new Error('Failed to fetch resources');
+}
+
+// Usage
+login('user@example.com', 'your_password')
+  .then(() => getAvailableResources())
+  .then(data => console.log('Resources:', data))
+  .catch(error => console.error('Error:', error));
+```
+
+## Troubleshooting
+
+### Login Fails with Valid Credentials
+
+- Verify the email address is correct and registered
+- Ensure the user account is active (`is_active=True`)
+- Check that the password meets validation requirements
+
+### Session Cookie Not Persisted
+
+- Ensure `credentials: 'include'` is set in fetch requests
+- Check CORS configuration allows credentials
+- Verify the session cookie domain matches your request origin
+
+### 401 Unauthorized Responses
+
+- Verify you're logged in and the session is active
+- Check that the session cookie is being sent with requests
+- Session may have expired - try logging in again
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Overview" icon="book" href="/api/overview">
+    Explore available API endpoints
+  </Card>
+  <Card title="Projects API" icon="folder" href="/api/projects/resources">
+    Learn about project management endpoints
+  </Card>
+</CardGroup>

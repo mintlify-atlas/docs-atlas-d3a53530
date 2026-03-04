@@ -1,0 +1,386 @@
+---
+title: Equipment Management
+description: Track vehicles, resource items, certifications, and equipment status
+icon: toolbox
+---
+
+## Overview
+
+The Equipment module manages all physical assets including vehicles, sanitary equipment, water treatment plants, and storage tanks. Each item tracks its technical specifications, availability status, and certification requirements.
+
+## Resource Items
+
+### Equipment Types
+
+Mantis supports a wide range of equipment types:
+
+<CardGroup cols={2}>
+  <Card title="Sanitary Equipment" icon="toilet">
+    - LVMNOS: Lavamanos (Handwashing stations)
+    - BTSNHM: Batería sanitaria hombre (Men's bathroom)
+    - BTSNMJ: Batería sanitaria mujer (Women's bathroom)
+    - EST4UR: Estación cuádruple urinario (4-urinal station)
+    - CMPRBN: Camper baño (Bathroom camper)
+  </Card>
+  <Card title="Treatment Plants" icon="filter">
+    - PTRTAP: Planta de tratamiento de agua potable (Drinking water)
+    - PTRTAR: Planta de tratamiento de agua residual (Wastewater)
+  </Card>
+  <Card title="Storage Tanks" icon="drum-storage">
+    - TNQAAC: Tanques de almacenamiento agua cruda (Raw water)
+    - TNQAAR: Tanques de almacenamiento agua residual (Wastewater)
+  </Card>
+  <Card title="Services" icon="hand-holding">
+    - SERVIC: Generic services (no physical equipment)
+  </Card>
+</CardGroup>
+
+### ResourceItem Model
+
+The `ResourceItem` model provides flexible field management based on equipment type:
+
+```python
+class ResourceItem(BaseModel):
+    id = AutoField(primary_key=True)
+    name = CharField(max_length=255)
+    code = CharField(max_length=50, unique=True)
+    type_equipment = CharField(
+        max_length=255,
+        choices=TYPE_EQUIPMENT  # LVMNOS, BTSNHM, etc.
+    )
+    brand = CharField(max_length=255)
+    model = CharField(max_length=255)
+    serial_number = CharField(max_length=255)
+    date_purchase = DateField()
+    
+    # Dimensions
+    height = PositiveSmallIntegerField()  # cm
+    width = PositiveSmallIntegerField()   # cm
+    depth = PositiveSmallIntegerField()   # cm
+    weight = PositiveSmallIntegerField()  # kg
+    capacity_gallons = DecimalField(max_digits=10, decimal_places=2)
+    
+    # Status tracking
+    stst_status_equipment = CharField(
+        choices=STATUS_EQUIPMENT,
+        default='FUNCIONANDO'
+    )
+    stst_status_disponibility = CharField(
+        choices=DISPONIBILITY_STATUS,
+        default='DISPONIBLE'
+    )
+    stst_current_location = CharField(max_length=255)
+    stst_current_project_id = SmallIntegerField()
+    stst_commitment_date = DateField()
+    stst_release_date = DateField()
+```
+
+## Status Management
+
+### Equipment Status (Technical Condition)
+
+<CardGroup cols={2}>
+  <Card title="FUNCIONANDO" icon="circle-check">
+    Equipment is operational and ready for use
+  </Card>
+  <Card title="DAÑADO" icon="circle-xmark">
+    Equipment is damaged and cannot operate
+  </Card>
+  <Card title="INCOMPLETO" icon="circle-exclamation">
+    Equipment is missing parts or accessories
+  </Card>
+  <Card title="EN REPARACION" icon="wrench">
+    Equipment is undergoing repair
+  </Card>
+</CardGroup>
+
+### Availability Status
+
+<CardGroup cols={2}>
+  <Card title="DISPONIBLE" icon="circle-check">
+    Available for rental or assignment to projects
+  </Card>
+  <Card title="RENTADO" icon="handshake">
+    Currently rented and assigned to a project
+  </Card>
+</CardGroup>
+
+<Note>
+  When `stst_status_equipment = 'EN REPARACION'`, the `stst_repair_reason` field should document the reason for repair.
+</Note>
+
+## Equipment-Specific Features
+
+### Sanitary Equipment Fields
+
+For bathroom and handwashing equipment, track component availability:
+
+```python
+# Boolean fields for component tracking
+have_foot_pumps = BooleanField(default=False)
+have_paper_dispenser = BooleanField(default=False)
+have_soap_dispenser = BooleanField(default=False)
+have_napkin_dispenser = BooleanField(default=False)
+have_paper_towels = BooleanField(default=False)
+have_urinals = BooleanField(default=False)  # Men's bathrooms only
+have_seat = BooleanField(default=False)
+have_toilet_pump = BooleanField(default=False)
+have_sink_pump = BooleanField(default=False)
+have_toilet_lid = BooleanField(default=False)
+have_bathroom_bases = BooleanField(default=False)
+have_ventilation_pipe = BooleanField(default=False)
+```
+
+### Treatment Plant Components
+
+For water treatment plants (PTRTAP and PTRTAR):
+
+<Accordion title="Motor and Blower Components">
+  ```python
+  engine_brand = CharField(max_length=255)
+  engine_model = CharField(max_length=255)
+  engine_fases = CharField(choices=[('1', '1 FASE'), ('2', '2 FASES'), ('3', '3 FASES')])
+  blower_brand = CharField(max_length=255)
+  blower_model = CharField(max_length=255)
+  have_engine = BooleanField(default=False)
+  have_blower_brand = BooleanField(default=False)
+  ```
+</Accordion>
+
+<Accordion title="Belt and Pulley System">
+  ```python
+  belt_brand = CharField(max_length=255)
+  belt_model = CharField(max_length=255)
+  belt_type = CharField(choices=[('A', 'A'), ('B', 'B')])
+  blower_pulley_brand = CharField(max_length=255)
+  blower_pulley_model = CharField(max_length=255)
+  motor_pulley_brand = CharField(max_length=255)
+  motor_pulley_model = CharField(max_length=255)
+  have_belt_brand = BooleanField(default=False)
+  have_blower_pulley = BooleanField(default=False)
+  have_motor_pulley = BooleanField(default=False)
+  ```
+</Accordion>
+
+<Accordion title="Electrical and Control Systems">
+  ```python
+  electrical_panel_brand = CharField(max_length=255)
+  electrical_panel_model = CharField(max_length=255)
+  engine_guard_brand = CharField(max_length=255)
+  engine_guard_model = CharField(max_length=255)
+  relay_engine = CharField(max_length=255)
+  relay_blower = CharField(max_length=255)
+  have_electrical_panel = BooleanField(default=False)
+  have_motor_guard = BooleanField(default=False)
+  have_relay_engine = BooleanField(default=False)
+  have_relay_blower = BooleanField(default=False)
+  ```
+</Accordion>
+
+<Accordion title="Pumps and Filters (PTRTAP only)">
+  ```python
+  pump_filter = CharField(max_length=255)
+  pump_pressure = CharField(max_length=255)
+  pump_dosing = CharField(max_length=255)
+  sand_carbon_filter = CharField(max_length=255)
+  hidroneumatic_tank = CharField(max_length=255)
+  uv_filter = CharField(max_length=255)
+  have_pump_filter = BooleanField(default=False)
+  have_pump_pressure = BooleanField(default=False)
+  have_pump_dosing = BooleanField(default=False)
+  have_sand_carbon_filter = BooleanField(default=False)
+  have_hidroneumatic_tank = BooleanField(default=False)
+  have_uv_filter = BooleanField(default=False)
+  ```
+</Accordion>
+
+## Vehicle Management
+
+### Vehicle Model
+
+Track company vehicles with certification and documentation:
+
+```python
+class Vehicle(BaseModel):
+    id = AutoField(primary_key=True)
+    brand = CharField(max_length=255, default='SIN MARCA')
+    model = CharField(max_length=255)
+    type_vehicle = CharField(
+        max_length=255,
+        choices=[
+            ('CAMION', 'CAMION'),
+            ('VACUUM', 'VACUUM'),
+            ('CAMIONETA', 'CAMIONETA'),
+            ('PLATAFORMA', 'PLATAFORMA'),
+            ('AUTO', 'AUTO')
+        ]
+    )
+    year = IntegerField()
+    no_plate = CharField(max_length=10, unique=True)
+    status_vehicle = CharField(
+        choices=[
+            ('DISPONIBLE', 'DISPONIBLE'),
+            ('EN MANTENIMIENTO', 'EN MANTENIMIENTO'),
+            ('STANBY', 'STANBY')
+        ],
+        default='DISPONIBLE'
+    )
+    owner_transport = CharField(max_length=255, default='PEISOL')
+```
+
+### Certification Tracking
+
+Vehicles require multiple certifications with expiration dates:
+
+<CardGroup cols={2}>
+  <Card title="Operating Certificate" icon="certificate">
+    `date_cert_oper` → `due_date_cert_oper`
+    
+    Status: `status_cert_oper`
+  </Card>
+  <Card title="Registration (Matrícula)" icon="id-card">
+    `date_matricula` → `due_date_matricula`
+  </Card>
+  <Card title="MTOP Authorization" icon="stamp">
+    `date_mtop` → `due_date_mtop`
+  </Card>
+  <Card title="Technical Review" icon="clipboard-check">
+    `date_technical_review` → `due_date_technical_review`
+  </Card>
+  <Card title="Insurance Policy" icon="shield">
+    `insurance_issue_date` → `insurance_expiration_date`
+    
+    Policy: `nro_poliza`
+    
+    Company: `insurance_company`
+  </Card>
+  <Card title="Satellite Tracking" icon="satellite">
+    `date_satellite` → `due_date_satellite`
+  </Card>
+</CardGroup>
+
+### Certification Status
+
+The `status_cert_oper` field tracks operating certificate status:
+
+- **VIGENTE**: Valid and current
+- **VENCIDO**: Expired
+- **NO APLICA**: Not applicable
+- **POR VENCER**: Expiring soon
+- **EN TRAMITE**: In process
+- **RECHAZADO**: Rejected
+
+### Vehicle Documentation
+
+Attach PDF documents for compliance:
+
+```python
+poliza_file = FileField(
+    upload_to='vehicles/polizas/',
+    validators=[validate_pdf_file]
+)
+matricula_file = FileField(
+    upload_to='vehicles/matriculas/',
+    validators=[validate_pdf_file]
+)
+rev_tec_file = FileField(
+    upload_to='vehicles/revisiones_tecnicas/',
+    validators=[validate_pdf_file]
+)
+vehicle_image = ImageField(
+    upload_to='vehicles/images/',
+    validators=[validate_image_file]
+)
+```
+
+## Code Examples
+
+### Querying Equipment by Status
+
+```python
+from equipment.models import ResourceItem
+
+# Get all available equipment
+available = ResourceItem.objects.filter(
+    stst_status_disponibility='DISPONIBLE',
+    stst_status_equipment='FUNCIONANDO',
+    is_active=True
+)
+
+# Get equipment currently in repair
+in_repair = ResourceItem.objects.filter(
+    stst_status_equipment='EN REPARACION',
+    is_active=True
+)
+
+# Get equipment by code
+equipment = ResourceItem.get_by_code('BT-001')
+```
+
+### Working with Equipment Fields
+
+```python
+# Get fields specific to equipment type
+equipment = ResourceItem.objects.get(code='BT-001')
+
+# Access type-specific fields
+all_fields = equipment.all_fields_for_type
+boolean_fields = equipment.boolean_fields
+specific_fields = equipment.specific_fields
+
+# Get field value with display name
+status_value = equipment.get_field_value('status')
+status_label = equipment.get_field_label('stst_status_equipment')
+
+# Get checklist items for inspection
+checklist = equipment.present_have_fields
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Status Updates">
+    - Update `stst_status_disponibility` when assigning equipment to projects
+    - Set `stst_current_project_id` and `stst_current_location` when rented
+    - Record `stst_commitment_date` when equipment goes out
+    - Record `stst_release_date` when equipment returns
+  </Accordion>
+  
+  <Accordion title="Certification Management">
+    - Monitor vehicle certification expiration dates
+    - Update `status_cert_oper` based on due dates
+    - Attach PDF documents for all certifications
+    - Set up alerts for certifications expiring within 30 days
+  </Accordion>
+  
+  <Accordion title="Equipment Maintenance">
+    - Mark equipment as 'EN REPARACION' when maintenance is needed
+    - Document repair reason in `stst_repair_reason`
+    - Update status to 'FUNCIONANDO' after repairs complete
+    - Track replaced parts and service history
+  </Accordion>
+  
+  <Accordion title="Component Tracking">
+    - Use boolean `have_*` fields to track component presence
+    - Update checklist fields during equipment inspections
+    - Document missing components before deployment
+    - Track component brands and models for replacement parts
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Projects" icon="folder-open" href="/features/projects">
+    Assign equipment to project contracts
+  </Card>
+  <Card title="Maintenance" icon="wrench" href="/features/maintenance">
+    Schedule and track equipment maintenance
+  </Card>
+  <Card title="Reports" icon="file-pdf" href="/features/reports">
+    Generate equipment checklists and status reports
+  </Card>
+  <Card title="Custody Chains" icon="link" href="/features/custody-chains">
+    Track equipment during field operations
+  </Card>
+</CardGroup>

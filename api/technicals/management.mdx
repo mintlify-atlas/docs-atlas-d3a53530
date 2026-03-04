@@ -1,0 +1,407 @@
+---
+title: 'Technical Staff Management'
+description: 'Manage technical passes and vaccination records for staff members'
+---
+
+# Technical Staff Management
+
+Manage technical passes (pases técnicos) and vaccination records for technical staff members. These endpoints allow creating, updating, and deleting pass credentials and vaccination certificates required for field operations.
+
+## Create or Update Technical Pass
+
+<CodeGroup>
+```bash POST /api/technicals/create_update_pass_technical/
+curl -X POST https://api.mantis.com/api/technicals/create_update_pass_technical/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "technical_id": 123,
+    "bloque": "petroecuador",
+    "fecha_caducidad": "2026-12-31"
+  }'
+```
+
+```bash PUT /api/technicals/create_update_pass_technical/
+curl -X PUT https://api.mantis.com/api/technicals/create_update_pass_technical/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 456,
+    "technical_id": 123,
+    "bloque": "shaya",
+    "fecha_caducidad": "2027-06-30"
+  }'
+```
+</CodeGroup>
+
+Create a new technical pass or update an existing one. Use POST to create and PUT to update.
+
+### Request Body
+
+<ParamField body="technical_id" type="integer" required>
+  ID of the technical staff member
+</ParamField>
+
+<ParamField body="bloque" type="string" required>
+  Block/company pass type. Valid options:
+  - `petroecuador` - Tarjeta de Petroecuador
+  - `shaya` - Shaya
+  - `consorcio_shushufindi` - Consorcio Shushufindi
+  - `enap_sipec` - ENAP SIPEC
+  - `orion` - Tarjeta Orion
+  - `andes_petroleum` - Andes Petroleum
+  - `pardalis_services` - Pardalis Services
+  - `frontera_energy` - Frontera Energy
+  - `gran_tierra` - Gran Tierra
+  - `pcr` - PCR
+  - `halliburton` - Halliburton
+  - `gente_oil` - Gente Oil
+  - `tribiol_gas` - Tribiol Gas
+  - `adico` - Adico
+  - `cuyaveno_petro` - Cuyaveno Petro
+  - `geopark` - Geopark
+</ParamField>
+
+<ParamField body="fecha_caducidad" type="string" required>
+  Expiration date in YYYY-MM-DD format
+</ParamField>
+
+<ParamField body="id" type="integer">
+  Pass ID (required only for PUT requests)
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the operation was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message about the operation
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created or updated pass technical record
+  <ResponseField name="id" type="integer">
+    Pass record ID
+  </ResponseField>
+  <ResponseField name="technical_id" type="integer">
+    Associated technical staff ID
+  </ResponseField>
+  <ResponseField name="bloque" type="string">
+    Block/company identifier
+  </ResponseField>
+  <ResponseField name="fecha_caducidad" type="string">
+    Expiration date (YYYY-MM-DD)
+  </ResponseField>
+  <ResponseField name="pass_file_url" type="string" nullable>
+    URL to the uploaded pass file (PDF)
+  </ResponseField>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Pase creado",
+  "data": {
+    "id": 456,
+    "technical_id": 123,
+    "bloque": "petroecuador",
+    "fecha_caducidad": "2026-12-31",
+    "pass_file_url": "/media/technicals/passes/pass_123.pdf"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Create or Update Vaccination Record
+
+<CodeGroup>
+```bash POST /api/technicals/create_update_vaccine/
+curl -X POST https://api.mantis.com/api/technicals/create_update_vaccine/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "technical_id": 123,
+    "vaccine_type": "YELLOW_FEVER",
+    "application_date": "2025-03-15",
+    "batch_number": "YF2025-XYZ",
+    "dose_number": 1
+  }'
+```
+
+```bash PUT /api/technicals/create_update_vaccine/
+curl -X PUT https://api.mantis.com/api/technicals/create_update_vaccine/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 789,
+    "technical_id": 123,
+    "vaccine_type": "YELLOW_FEVER",
+    "application_date": "2025-03-15",
+    "next_dose_date": "2035-03-15"
+  }'
+```
+</CodeGroup>
+
+Create a new vaccination record or update an existing one for a technical staff member.
+
+### Request Body
+
+<ParamField body="technical_id" type="integer" required>
+  ID of the technical staff member
+</ParamField>
+
+<ParamField body="vaccine_type" type="string" required>
+  Type of vaccine. Valid options:
+  - `HEPATITIS_A_B` - Hepatitis A y B
+  - `TETANUS` - Tétanos
+  - `TYPHOID` - Tifoidea
+  - `YELLOW_FEVER` - Fiebre Amarilla
+  - `INFLUENZA` - Influenza
+  - `MEASLES` - Sarampión
+  - `COVID` - Covid-19
+  - `OTHER` - Otra
+</ParamField>
+
+<ParamField body="application_date" type="string" required>
+  Date vaccine was administered (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="batch_number" type="string">
+  Vaccine batch/lot number
+</ParamField>
+
+<ParamField body="dose_number" type="integer">
+  Dose number (e.g., 1, 2, 3) if part of a series
+</ParamField>
+
+<ParamField body="next_dose_date" type="string">
+  Estimated date for next dose (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Additional notes or observations
+</ParamField>
+
+<ParamField body="id" type="integer">
+  Vaccination record ID (required only for PUT requests)
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the operation was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message about the operation
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created or updated vaccination record
+  <ResponseField name="id" type="integer">
+    Vaccination record ID
+  </ResponseField>
+  <ResponseField name="technical_id" type="integer">
+    Associated technical staff ID
+  </ResponseField>
+  <ResponseField name="vaccine_type" type="string">
+    Vaccine type code
+  </ResponseField>
+  <ResponseField name="vaccine_type_display" type="string">
+    Human-readable vaccine type name
+  </ResponseField>
+  <ResponseField name="batch_number" type="string" nullable>
+    Vaccine batch number
+  </ResponseField>
+  <ResponseField name="application_date" type="string">
+    Date administered (YYYY-MM-DD)
+  </ResponseField>
+  <ResponseField name="dose_number" type="integer" nullable>
+    Dose number in series
+  </ResponseField>
+  <ResponseField name="next_dose_date" type="string" nullable>
+    Next dose date (YYYY-MM-DD)
+  </ResponseField>
+  <ResponseField name="notes" type="string" nullable>
+    Additional notes
+  </ResponseField>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Registro de vacunacion creado",
+  "data": {
+    "id": 789,
+    "technical_id": 123,
+    "vaccine_type": "YELLOW_FEVER",
+    "vaccine_type_display": "Fiebre Amarilla",
+    "batch_number": "YF2025-XYZ",
+    "application_date": "2025-03-15",
+    "dose_number": 1,
+    "next_dose_date": "2035-03-15",
+    "notes": null
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Delete Technical Pass
+
+<CodeGroup>
+```bash DELETE (Single)
+curl -X DELETE https://api.mantis.com/api/technicals/delete_pass_technical/ \
+  -H "Content-Type: application/json" \
+  -d '{"id": 456}'
+```
+
+```bash POST (Multiple)
+curl -X POST https://api.mantis.com/api/technicals/delete_pass_technical/ \
+  -H "Content-Type: application/json" \
+  -d '{"ids": [456, 457, 458]}'
+```
+</CodeGroup>
+
+Soft delete one or multiple technical pass records. Records are marked as inactive but not permanently removed from the database.
+
+### Request Body
+
+<ParamField body="id" type="integer">
+  Pass ID to delete (for single deletion with DELETE method)
+</ParamField>
+
+<ParamField body="ids" type="array">
+  Array of pass IDs to delete (for bulk deletion with POST method)
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the operation was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message about the operation
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Deletion results
+  <ResponseField name="id" type="integer">
+    Deleted pass ID (single deletion)
+  </ResponseField>
+  <ResponseField name="technical_id" type="integer">
+    Associated technical ID (single deletion)
+  </ResponseField>
+  <ResponseField name="deleted" type="array">
+    Array of successfully deleted pass objects (bulk deletion)
+  </ResponseField>
+  <ResponseField name="errors" type="array">
+    Array of errors encountered during bulk deletion
+  </ResponseField>
+</ResponseField>
+
+---
+
+## Delete Vaccination Record
+
+<CodeGroup>
+```bash DELETE (Single)
+curl -X DELETE https://api.mantis.com/api/technicals/delete_vaccine/ \
+  -H "Content-Type: application/json" \
+  -d '{"id": 789}'
+```
+
+```bash POST (Multiple)
+curl -X POST https://api.mantis.com/api/technicals/delete_vaccine/ \
+  -H "Content-Type: application/json" \
+  -d '{"ids": [789, 790, 791]}'
+```
+</CodeGroup>
+
+Soft delete one or multiple vaccination records. Records are marked as inactive but not permanently removed.
+
+### Request Body
+
+<ParamField body="id" type="integer">
+  Vaccination record ID to delete (for single deletion)
+</ParamField>
+
+<ParamField body="ids" type="array">
+  Array of vaccination record IDs to delete (for bulk deletion)
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the operation was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message about the operation
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Deletion results
+  <ResponseField name="id" type="integer">
+    Deleted record ID (single deletion)
+  </ResponseField>
+  <ResponseField name="technical_id" type="integer">
+    Associated technical ID (single deletion)
+  </ResponseField>
+  <ResponseField name="deleted" type="array">
+    Array of successfully deleted record objects (bulk deletion)
+  </ResponseField>
+  <ResponseField name="errors" type="array">
+    Array of errors encountered during bulk deletion
+  </ResponseField>
+</ResponseField>
+
+---
+
+## Models
+
+### PassTechnical Model
+
+The PassTechnical model represents access passes for technical staff to work in specific oil blocks or facilities.
+
+**Fields:**
+- `id` (integer) - Primary key
+- `technical` (foreign key) - Reference to Technical staff member
+- `bloque` (string) - Block/company identifier (max 32 chars)
+- `fecha_caducidad` (date) - Expiration date
+- `pass_file` (file) - PDF file of the pass document
+- `is_active` (boolean) - Soft delete flag
+- `created_at` (datetime) - Creation timestamp
+- `updated_at` (datetime) - Last update timestamp
+
+**Methods:**
+- `get_by_technical(technical_id)` - Retrieve pass for a specific technical staff member
+
+### VaccinationRecord Model
+
+The VaccinationRecord model tracks vaccination history for technical staff members.
+
+**Fields:**
+- `id` (integer) - Primary key
+- `technical` (foreign key) - Reference to Technical staff member
+- `vaccine_type` (string) - Type of vaccine (max 50 chars)
+- `batch_number` (string) - Vaccine batch/lot number (max 50 chars)
+- `application_date` (date) - Date vaccine was administered
+- `dose_number` (integer) - Dose number in series (e.g., 1, 2, 3)
+- `next_dose_date` (date) - Estimated date for next dose
+- `notes` (text) - Additional notes
+- `vaccine_file` (file) - PDF file of vaccination certificate
+- `is_active` (boolean) - Soft delete flag
+- `created_at` (datetime) - Creation timestamp
+- `updated_at` (datetime) - Last update timestamp
+
+**Properties:**
+- `days_to_next_dose` - Calculated days remaining until next dose
+- `next_dose` - Returns the next dose date
+
+**Methods:**
+- `get_all_by_technical(technical_id)` - Retrieve all active vaccination records for a technical staff member, ordered by application date (descending)
